@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session_token')?.value;
 
   // صفحات عمومی که نیاز به auth ندارند
-  const publicPaths = ['/login', '/api/auth/login', '/api/auth/verify'];
+  const publicPaths = ['/login', '/api/auth/login', '/api/auth/verify', '/api/setup', '/api/games'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
   // اگر صفحه عمومی است، اجازه دسترسی بده
