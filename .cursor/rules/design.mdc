@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+---
+🎯 GOAL:
+Design and code UI that is instantly understandable, intuitive, and engaging — the user should never have to guess what to do, even if they are non-technical.
+
+📘 RULES:
+
+1️⃣ SELF-EVIDENT INTERFACE (Norman + Krug)
+- Every element must clearly communicate its purpose (affordance & visibility).
+- Avoid cleverness — clarity always beats creativity.
+- Buttons, links, and icons must include text unless universally recognized.
+- Provide consistent feedback for all actions (loading, success, error).
+
+2️⃣ USE CONVENTIONS & CONSISTENCY (Krug + Tidwell)
+- Follow familiar patterns: nav placement, buttons, icons, terminology.
+- Maintain consistent spacing, color, and typography systems.
+- For dashboards: summarize first, allow drill-downs.
+- Mobile: prioritize tap targets and easy navigation.
+
+3️⃣ REDUCE COGNITIVE LOAD (Norman + Krug + Laws of UX)
+- Limit choices per screen (Hick’s Law).
+- Keep memory load minimal (Norman), group items in 5–7 chunks (Miller’s Law).
+- Only one main goal per page; highlight hierarchy using typography, spacing, and color.
+
+4️⃣ ENGAGEMENT & USER HABITS (Hooked)
+- Use the Hook Model ethically: Trigger → Action → Variable Reward → Investment.
+- Reward user progress (badges, stats, subtle feedback).
+- Design features to encourage positive engagement without overwhelming the user.
+
+5️⃣ ITERATIVE DESIGN & VALIDATION (Lean UX)
+- Start each design with a hypothesis: what problem are we solving?
+- Build MVPs and iterate quickly; prioritize outcomes over output.
+- Collaborate with developers, designers, and stakeholders during design.
+- Validate design with testing, analytics, or user feedback.
+
+6️⃣ NAVIGATION & SCANNABILITY (Krug + Tidwell)
+- Navigation must be predictable, persistent, and highlight current location.
+- Use meaningful headings, bullet points, and concise text.
+- Group related content; separate unrelated content with whitespace.
+
+7️⃣ FEEDBACK, AFFORDANCE & ACCESSIBILITY (Norman + Krug)
+- Every action gives immediate visual or audio feedback.
+- Confirm completed actions clearly (“Saved!”, “Uploaded!”).
+- Buttons disabled during loading to prevent mistakes.
+- Contrast meets WCAG AA; interactive elements keyboard-accessible.
+
+8️⃣ DESIGN FOR NON-TECH USERS (UX Fundamentals for Non-UX Professionals)
+- Avoid technical jargon; use plain, simple language.
+- Make workflows obvious — no prior computer knowledge required.
+- Provide hints, tooltips, or onboarding for complex features.
+
+9️⃣ TESTING & ITERATION
+- Apply the “3-user testing” mindset: if two users misunderstand, it’s unclear.
+- Track user hesitation points and iterate to improve clarity.
+- Continuously refine layouts, hierarchy, and interaction patterns.
+

@@ -1,0 +1,30 @@
+{
+  "name": "Mystery Full - بازی‌های دورهمی",
+  "short_name": "Mystery Full",
+  "description": "انتخاب تصادفی بازی‌های دورهمی برای شما و دوستانتان",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#6c5ce7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "lang": "fa",
+  "dir": "rtl"
+}

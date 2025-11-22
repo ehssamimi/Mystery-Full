@@ -1,0 +1,235 @@
+export const translations = {
+  fa: {
+    // Auth
+    login: 'ورود به سیستم',
+    phone: 'شماره تلفن',
+    verificationCode: 'کد تأیید',
+    defaultCode: 'کد دیفالت: 111111',
+    sendCode: 'ارسال کد تأیید',
+    verify: 'ورود',
+    sending: 'در حال ارسال...',
+    verifying: 'در حال بررسی...',
+    logout: 'خروج',
+    
+    // Admin
+    adminPanel: 'پنل مدیریت',
+    dashboard: 'داشبورد',
+    users: 'کاربران',
+    games: 'بازی‌ها',
+    welcome: 'خوش آمدید',
+    
+    // Users
+    userManagement: 'مدیریت کاربران',
+    userList: 'لیست کاربران',
+    phoneNumber: 'شماره تلفن',
+    role: 'نقش',
+    user: 'کاربر',
+    admin: 'مدیر',
+    joinDate: 'تاریخ عضویت',
+    actions: 'عملیات',
+    you: 'شما',
+    
+    // Games
+    gameManagement: 'مدیریت بازی‌ها',
+    createGame: 'ایجاد بازی جدید',
+    editGame: 'ویرایش بازی',
+    gameName: 'نام فارسی',
+    gameNameEn: 'نام انگلیسی',
+    description: 'توضیحات',
+    minPlayers: 'حداقل بازیکن',
+    maxPlayers: 'حداکثر بازیکن',
+    duration: 'مدت زمان (دقیقه)',
+    category: 'دسته‌بندی',
+    difficulty: 'سطح دشواری',
+    easy: 'آسان',
+    medium: 'متوسط',
+    hard: 'سخت',
+    rules: 'قوانین',
+    tips: 'نکات (اختیاری)',
+    materials: 'مواد مورد نیاز (اختیاری)',
+    save: 'ذخیره تغییرات',
+    cancel: 'انصراف',
+    saving: 'در حال ذخیره...',
+    delete: 'حذف',
+    deleting: 'در حال حذف...',
+    edit: 'ویرایش',
+    players: 'بازیکنان',
+    noGames: 'هیچ بازی‌ای یافت نشد',
+    deleteConfirm: 'آیا مطمئن هستید که می‌خواهید این بازی را حذف کنید؟',
+    gameCreated: 'بازی با موفقیت ایجاد شد',
+    gameUpdated: 'بازی با موفقیت به‌روزرسانی شد',
+    gameDeleted: 'بازی با موفقیت حذف شد',
+    
+    // Favorites
+    favorites: 'علاقه‌مندی‌ها',
+    myFavorites: 'علاقه‌مندی‌های من',
+    noFavorites: 'شما هنوز بازی‌ای به علاقه‌مندی‌ها اضافه نکرده‌اید',
+    addToFavorites: 'افزودن به علاقه‌مندی‌ها',
+    removeFromFavorites: 'حذف از علاقه‌مندی‌ها',
+    inFavorites: 'در علاقه‌مندی‌ها',
+    
+    // Common
+    loading: 'در حال بارگذاری...',
+    error: 'خطا',
+    success: 'موفق',
+    back: 'بازگشت',
+    home: 'خانه',
+    
+    // Home Page
+    appTitle: 'Mystery Full',
+    howManyPlayers: 'چند نفر هستید؟',
+    player: 'بازیکن',
+    startGame: 'شروع بازی 🎮',
+    
+    // Game Details
+    gameSelectedForYou: 'این بازی برای شما انتخاب شده است!',
+    gameSelectedMessage: 'شما و دوستانتان حتماً باید این بازی را انجام دهید. آماده شوید برای یک تجربه فوق‌العاده!',
+    playerCount: 'تعداد بازیکن',
+    durationLabel: 'مدت زمان',
+    difficultyLabel: 'سطح دشواری',
+    categoryLabel: 'دسته‌بندی',
+    minutes: 'دقیقه',
+    aboutGame: 'درباره بازی',
+    gameRules: 'قوانین بازی',
+    importantTips: 'نکات مهم',
+    backToHome: 'بازگشت به خانه',
+    
+    // Game Roulette
+    selecting: 'در حال انتخاب...',
+    selectedForYou: 'برای شما انتخاب شد!',
+    loadingBoxes: 'در حال بارگذاری باکس‌ها...',
+    
+    // Login
+    enterPhoneNumber: 'شماره تلفن خود را وارد کنید',
+    enterVerificationCode: 'کد تأیید 6 رقمی را وارد کنید',
+    errorSendingCode: 'خطا در ارسال کد',
+    errorServerConnection: 'خطا در ارتباط با سرور',
+    invalidCode: 'کد تأیید نامعتبر است',
+    
+    // Errors
+    noGameFound: 'بازی پیدا نشد',
+    noGamesForPlayers: 'بازی‌ای برای {count} نفر پیدا نشد',
+    
+    // Languages
+    persian: 'فارسی',
+    english: 'English',
+  },
+  en: {
+    // Auth
+    login: 'Login',
+    phone: 'Phone Number',
+    verificationCode: 'Verification Code',
+    defaultCode: 'Default Code: 111111',
+    sendCode: 'Send Verification Code',
+    verify: 'Login',
+    sending: 'Sending...',
+    verifying: 'Verifying...',
+    logout: 'Logout',
+    
+    // Admin
+    adminPanel: 'Admin Panel',
+    dashboard: 'Dashboard',
+    users: 'Users',
+    games: 'Games',
+    welcome: 'Welcome',
+    
+    // Users
+    userManagement: 'User Management',
+    userList: 'User List',
+    phoneNumber: 'Phone Number',
+    role: 'Role',
+    user: 'User',
+    admin: 'Admin',
+    joinDate: 'Join Date',
+    actions: 'Actions',
+    you: 'You',
+    
+    // Games
+    gameManagement: 'Game Management',
+    createGame: 'Create New Game',
+    editGame: 'Edit Game',
+    gameName: 'Game Name (Persian)',
+    gameNameEn: 'Game Name (English)',
+    description: 'Description',
+    minPlayers: 'Min Players',
+    maxPlayers: 'Max Players',
+    duration: 'Duration (minutes)',
+    category: 'Category',
+    difficulty: 'Difficulty',
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    rules: 'Rules',
+    tips: 'Tips (optional)',
+    materials: 'Materials (optional)',
+    save: 'Save Changes',
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    delete: 'Delete',
+    deleting: 'Deleting...',
+    edit: 'Edit',
+    players: 'Players',
+    noGames: 'No games found',
+    deleteConfirm: 'Are you sure you want to delete this game?',
+    gameCreated: 'Game created successfully',
+    gameUpdated: 'Game updated successfully',
+    gameDeleted: 'Game deleted successfully',
+    
+    // Favorites
+    favorites: 'Favorites',
+    myFavorites: 'My Favorites',
+    noFavorites: 'You haven\'t added any games to favorites yet',
+    addToFavorites: 'Add to Favorites',
+    removeFromFavorites: 'Remove from Favorites',
+    inFavorites: 'In Favorites',
+    
+    // Common
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    back: 'Back',
+    home: 'Home',
+    
+    // Home Page
+    appTitle: 'Mystery Full',
+    howManyPlayers: 'How many players?',
+    player: 'Player',
+    startGame: 'Start Game 🎮',
+    
+    // Game Details
+    gameSelectedForYou: 'This game has been selected for you!',
+    gameSelectedMessage: 'You and your friends must play this game. Get ready for an amazing experience!',
+    playerCount: 'Player Count',
+    durationLabel: 'Duration',
+    difficultyLabel: 'Difficulty',
+    categoryLabel: 'Category',
+    minutes: 'minutes',
+    aboutGame: 'About the Game',
+    gameRules: 'Game Rules',
+    importantTips: 'Important Tips',
+    backToHome: 'Back to Home',
+    
+    // Game Roulette
+    selecting: 'Selecting...',
+    selectedForYou: 'Selected for you!',
+    loadingBoxes: 'Loading boxes...',
+    
+    // Login
+    enterPhoneNumber: 'Enter your phone number',
+    enterVerificationCode: 'Enter the 6-digit verification code',
+    errorSendingCode: 'Error sending code',
+    errorServerConnection: 'Error connecting to server',
+    invalidCode: 'Invalid verification code',
+    
+    // Errors
+    noGameFound: 'Game not found',
+    noGamesForPlayers: 'No games found for {count} players',
+    
+    // Languages
+    persian: 'فارسی',
+    english: 'English',
+  },
+};
+
+export type TranslationKey = keyof typeof translations.fa;
+

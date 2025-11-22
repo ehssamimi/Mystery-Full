@@ -1,0 +1,64 @@
+---
+alwaysApply: true
+---
+---
+alwaysApply: true
+---
+🎯 GOAL:
+Create UI/UX components and web application code that is **modular, reusable, maintainable, and scalable**, following proven design patterns and modern software principles.
+
+📘 RULES:
+
+1️⃣ **CREATIONAL PATTERNS (Object Creation)**
+- **Abstract Factory**: Interface for creating families of related objects without specifying concrete classes.
+- **Builder**: Separate construction from representation; same process can build different outputs.
+- **Factory Method**: Interface for object creation, subclasses decide the concrete type.
+- **Prototype**: Clone existing objects to create new instances efficiently.
+
+2️⃣ **STRUCTURAL PATTERNS (Class/Object Composition)**
+- **Adapter**: Convert one interface to another expected by clients.
+- **Bridge**: Decouple abstraction from implementation.
+- **Composite**: Compose objects into tree structures for hierarchical representation.
+- **Decorator**: Dynamically add responsibilities to objects.
+- **Facade**: Simplify access to complex subsystems.
+- **Flyweight**: Share objects for efficiency.
+- **Proxy**: Control access to another object.
+
+3️⃣ **BEHAVIORAL PATTERNS (Interactions)**
+- **Chain of Responsibility**, **Command**, **Interpreter**, **Iterator**, **Mediator**, **Memento**, **Observer**, **State**, **Strategy**, **Template Method**, **Visitor**.
+- Ensure clear object communication and predictable behavior.
+
+4️⃣ **DEPENDENCY MANAGEMENT**
+- **Dependency Injection**: Pass dependencies into classes via constructor, setter, or interface.
+- Prefer **composition over inheritance** to reduce tight coupling.
+- **Program to an interface, not an implementation**.
+- Encapsulate what varies; isolate change-prone components.
+
+5️⃣ **CODE QUALITY PRINCIPLES**
+- **DRY**: Avoid duplication; reuse components and helpers.
+- **KISS**: Keep logic simple and readable; avoid unnecessary complexity.
+- **YAGNI**: Only implement features that are actually needed now.
+- **SOLID**: Apply all five principles for maintainable design.
+- **Separation of Concerns**: Layer UI, business logic, and data access clearly.
+- **Encapsulation**: Protect internal state, expose only necessary interfaces.
+
+6️⃣ **UI/UX INTEGRATION**
+- Modular components should respect UX rules: self-evident interface, consistent feedback, hierarchy, accessibility.
+- Follow **responsive and mobile-first design** principles.
+- Maintain usability patterns like clear navigation, scannable content, and predictable interactions.
+
+7️⃣ **TESTING & MAINTENANCE**
+- Write unit tests for all reusable components.
+- Use integration tests for subsystems.
+- Refactor continuously to improve readability and maintainability without changing behavior.
+- Document patterns, decisions, and interfaces for team clarity.
+
+8️⃣ **DOCUMENTATION & COMMUNICATION**
+- Use meaningful naming conventions for classes, methods, and variables.
+- Include UML or diagrams for complex component hierarchies.
+- Explain design decisions and chosen patterns to maintain clarity across the team.
+
+9️⃣ **ITERATION & FEEDBACK**
+- Continuously gather user feedback and analytics.
+- Refactor or update patterns if they no longer fit project needs.
+- Encourage collaboration between design, development, and QA teams.

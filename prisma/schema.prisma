@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  phone     String    @unique
+  role      String    @default("user") // "user" یا "admin"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String   // کد 6 رقمی
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([code])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  name        String
+  nameEn      String
+  description String
+  minPlayers  Int
+  maxPlayers  Int
+  category    String
+  rules       String
+  tips        String?
+  difficulty  String   @default("medium")
+  duration    Int      // in minutes
+  materials   String?  // مواد مورد نیاز
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
