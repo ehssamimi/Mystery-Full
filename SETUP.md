@@ -24,15 +24,15 @@ createdb mystery_full
 DATABASE_URL="postgresql://username:password@localhost:5432/mystery_full?schema=public"
 ```
 
-#### گزینه ۲: استفاده از Vercel Postgres (پیشنهادی برای ایران 🇮🇷)
+#### گزینه ۲: استفاده از Prisma Postgres (پیشنهادی برای ایران 🇮🇷)
 
 **برای Development:**
-می‌توانید از همان Vercel Postgres که برای Production استفاده می‌کنید، برای Development هم استفاده کنید:
+می‌توانید از همان Prisma Postgres که برای Production استفاده می‌کنید، برای Development هم استفاده کنید:
 
 1. در [Vercel Dashboard](https://vercel.com/dashboard) یک پروژه موقت بسازید (یا از همان پروژه اصلی استفاده کنید)
 2. به بخش **Storage** بروید
 3. روی **Create Database** کلیک کنید
-4. **Postgres** را انتخاب کنید
+4. **Prisma Postgres** را انتخاب کنید (گزینه "Instant Serverless Postgres") ⭐
 5. یک نام برای دیتابیس انتخاب کنید
 6. بعد از ایجاد، Connection String را کپی کنید
 7. در `.env.local` قرار دهید:

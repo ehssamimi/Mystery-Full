@@ -43,18 +43,28 @@ git push -u origin main
 
 ## 🗄️ مرحله ۲: راه‌اندازی دیتابیس PostgreSQL
 
-### گزینه ۱: استفاده از Vercel Postgres (پیشنهادی)
+### گزینه ۱: استفاده از Prisma Postgres (پیشنهادی ⭐)
+
+**چرا Prisma Postgres؟**
+- ✅ بهینه‌شده برای Prisma (یکپارچگی بهتر)
+- ✅ Instant Serverless (راه‌اندازی سریع‌تر)
+- ✅ بدون نیاز به تنظیمات اضافی
+- ✅ مناسب برای پروژه‌های Prisma
+
+**مراحل:**
 
 1. وارد [Vercel Dashboard](https://vercel.com/dashboard) شوید
 2. روی پروژه خود کلیک کنید (یا یک پروژه جدید بسازید)
 3. به بخش **Storage** بروید
 4. روی **Create Database** کلیک کنید
-5. **Postgres** را انتخاب کنید
+5. **Prisma Postgres** را انتخاب کنید (گزینه "Instant Serverless Postgres")
 6. یک نام برای دیتابیس انتخاب کنید (مثلاً `mystery-full-db`)
 7. Region را انتخاب کنید (پیشنهاد: `Washington, D.C. (US East)` برای سرعت بهتر)
 8. روی **Create** کلیک کنید
 
 **نکته مهم:** بعد از ایجاد دیتابیس، Vercel به صورت خودکار متغیر محیطی `DATABASE_URL` را تنظیم می‌کند. نیازی به تنظیم دستی نیست!
+
+**گزینه جایگزین:** اگر "Prisma Postgres" در دسترس نبود، می‌توانید از **Postgres** معمولی هم استفاده کنید (همان کار را می‌کند).
 
 ### گزینه ۲: استفاده از سرویس‌های دیگر (Neon, Supabase)
 
@@ -89,16 +99,20 @@ Vercel به صورت خودکار تنظیمات زیر را تشخیص می‌�
 
 ### ۳.۳. تنظیم Environment Variables
 
-اگر از **Vercel Postgres** استفاده می‌کنید:
-- ✅ `DATABASE_URL` به صورت خودکار تنظیم می‌شود
-- نیازی به تنظیم دستی نیست!
+اگر از **Prisma Postgres** استفاده می‌کنید:
+- ✅ `PRISMA_DATABASE_URL` به صورت خودکار تنظیم می‌شود (بعد از Connect کردن دیتابیس)
+- ✅ `DATABASE_URL` و `POSTGRES_URL` هم ممکن است تنظیم شوند
+- پروژه از `PRISMA_DATABASE_URL` استفاده می‌کند (بهینه‌تر برای Prisma Accelerate)
 
-اگر از **سرویس دیگر** استفاده می‌کنید:
-1. در صفحه تنظیمات پروژه، به بخش **Environment Variables** بروید
-2. متغیر زیر را اضافه کنید:
-   - **Name:** `DATABASE_URL`
-   - **Value:** Connection String دیتابیس شما
+**مهم:** بعد از Connect کردن دیتابیس، بررسی کنید که `PRISMA_DATABASE_URL` در Environment Variables وجود دارد:
+1. پروژه → Settings → Environment Variables
+2. باید `PRISMA_DATABASE_URL` را ببینید
+3. اگر وجود ندارد، دستی اضافه کنید:
+   - **Name:** `PRISMA_DATABASE_URL`
+   - **Value:** Connection String از Prisma Dashboard (شروع می‌شود با `prisma+postgres://`)
    - **Environment:** Production, Preview, Development (همه را انتخاب کنید)
+
+**نکته:** اگر `PRISMA_DATABASE_URL` وجود ندارد، می‌توانید از `DATABASE_URL` یا `POSTGRES_URL` هم استفاده کنید (اما `PRISMA_DATABASE_URL` بهینه‌تر است).
 
 ### ۳.۴. Deploy
 
