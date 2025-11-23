@@ -20,15 +20,19 @@ export default function GameDetails({ game, playerCount }: GameDetailsProps) {
   const [favorite, setFavorite] = useState(false);
 
   useEffect(() => {
-    setFavorite(isFavorite(game.id));
+    const checkFavorite = async () => {
+      const isFav = await isFavorite(game.id);
+      setFavorite(isFav);
+    };
+    checkFavorite();
     addToHistory(game.id, playerCount);
   }, [game.id, playerCount]);
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (favorite) {
-      removeFromFavorites(game.id);
+      await removeFromFavorites(game.id);
     } else {
-      addToFavorites(game.id);
+      await addToFavorites(game.id);
     }
     setFavorite(!favorite);
   };

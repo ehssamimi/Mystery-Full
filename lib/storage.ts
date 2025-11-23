@@ -6,30 +6,81 @@ export const StorageKeys = {
   PLAYER_COUNT: 'mystery-full-player-count',
 } as const;
 
-export function getFavorites(): string[] {
+// استفاده از API برای favorites (ذخیره در دیتابیس)
+export async function getFavorites(): Promise<string[]> {
   if (typeof window === 'undefined') return [];
-  const favorites = localStorage.getItem(StorageKeys.FAVORITES);
-  return favorites ? JSON.parse(favorites) : [];
+  
+  try {
+    const response = await fetch('/api/favorites');
+    const data = await response.json();
+    
+    if (data.success) {
+      return data.favorites.map((f: { gameId: string }) => f.gameId);
+    }
+  } catch (error) {
+    console.error('Error fetching favorites from API:', error);
+    // Fallback to localStorage
+    const favorites = localStorage.getItem(StorageKeys.FAVORITES);
+    return favorites ? JSON.parse(favorites) : [];
+  }
+  
+  return [];
 }
 
-export function addToFavorites(gameId: string): void {
-  if (typeof window === 'undefined') return;
-  const favorites = getFavorites();
-  if (!favorites.includes(gameId)) {
-    favorites.push(gameId);
-    localStorage.setItem(StorageKeys.FAVORITES, JSON.stringify(favorites));
+export async function addToFavorites(gameId: string): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    const response = await fetch('/api/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId }),
+    });
+    
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error adding favorite:', error);
+    // Fallback to localStorage
+    const favorites = getFavoritesSync();
+    if (!favorites.includes(gameId)) {
+      favorites.push(gameId);
+      localStorage.setItem(StorageKeys.FAVORITES, JSON.stringify(favorites));
+    }
+    return false;
   }
 }
 
-export function removeFromFavorites(gameId: string): void {
-  if (typeof window === 'undefined') return;
-  const favorites = getFavorites();
-  const filtered = favorites.filter((id) => id !== gameId);
-  localStorage.setItem(StorageKeys.FAVORITES, JSON.stringify(filtered));
+export async function removeFromFavorites(gameId: string): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    const response = await fetch(`/api/favorites?gameId=${gameId}`, {
+      method: 'DELETE',
+    });
+    
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error removing favorite:', error);
+    // Fallback to localStorage
+    const favorites = getFavoritesSync();
+    const filtered = favorites.filter((id) => id !== gameId);
+    localStorage.setItem(StorageKeys.FAVORITES, JSON.stringify(filtered));
+    return false;
+  }
 }
 
-export function isFavorite(gameId: string): boolean {
-  return getFavorites().includes(gameId);
+export async function isFavorite(gameId: string): Promise<boolean> {
+  const favorites = await getFavorites();
+  return favorites.includes(gameId);
+}
+
+// Helper functions for backward compatibility (localStorage)
+function getFavoritesSync(): string[] {
+  if (typeof window === 'undefined') return [];
+  const favorites = localStorage.getItem(StorageKeys.FAVORITES);
+  return favorites ? JSON.parse(favorites) : [];
 }
 
 export interface HistoryItem {

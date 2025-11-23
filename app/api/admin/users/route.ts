@@ -51,9 +51,49 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // دریافت favorites برای هر کاربر
+    const usersWithFavorites = await Promise.all(
+      users.map(async (user) => {
+        const favoritesCount = await prisma.favorite.count({
+          where: { userId: user.id },
+        });
+
+        const favorites = await prisma.favorite.findMany({
+          where: { userId: user.id },
+          include: {
+            game: {
+              select: {
+                id: true,
+                name: true,
+                nameEn: true,
+              },
+            },
+          },
+          take: 5, // فقط 5 تا اول
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        return {
+          id: user.id,
+          phone: user.phone,
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          favoritesCount,
+          favoriteGames: favorites.map((f) => ({
+            id: f.game.id,
+            name: f.game.name,
+            nameEn: f.game.nameEn,
+          })),
+        };
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      users,
+      users: usersWithFavorites,
     });
   } catch (error) {
     console.error('Get users error:', error);

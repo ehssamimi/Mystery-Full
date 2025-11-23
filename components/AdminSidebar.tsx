@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { useRouter } from 'next/navigation';
@@ -10,11 +11,42 @@ import { translations } from '@/lib/translations';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function AdminSidebar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true); // پیش‌فرض true برای SSR
   const pathname = usePathname();
   const { logout } = useAuthStore();
   const { language, isRTL } = useLanguageStore();
   const router = useRouter();
   const t = translations[language];
+
+  // تشخیص اندازه صفحه
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768);
+      // اگر در دسکتاپ هستیم و منوی موبایل باز است، آن را ببند
+      if (window.innerWidth >= 768 && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, [isMobileMenuOpen]);
+
+  // جلوگیری از scroll در body وقتی منوی موبایل باز است
+  useEffect(() => {
+    if (isMobileMenuOpen && !isDesktop) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen, isDesktop]);
 
   const menuItems = [
     {
@@ -52,12 +84,12 @@ export default function AdminSidebar() {
     router.push('/login');
   };
 
-  return (
+  const sidebarContent = (
     <div
-      className={`fixed top-0 w-64 bg-bg-secondary/80 backdrop-blur-sm h-screen p-4 flex flex-col z-50 ${
+      className={`w-full md:w-64 bg-bg-secondary/80 backdrop-blur-sm h-full md:h-screen p-4 flex flex-col ${
         isRTL 
-          ? 'right-0 border-l border-accent/20' 
-          : 'left-0 border-r border-accent/20'
+          ? 'border-l border-accent/20' 
+          : 'border-r border-accent/20'
       }`}
     >
       <div className="mb-8">
@@ -70,7 +102,11 @@ export default function AdminSidebar() {
         {menuItems.map((item, index) => {
           const isActive = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href}>
+            <Link 
+              key={item.href} 
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -101,6 +137,85 @@ export default function AdminSidebar() {
         <span className="font-medium">{t.logout}</span>
       </motion.button>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className={`md:hidden fixed top-4 z-50 p-2 rounded-lg bg-bg-secondary/80 backdrop-blur-sm border border-accent/20 text-accent ${
+          isRTL ? 'left-4' : 'right-4'
+        }`}
+        aria-label="Toggle menu"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {isMobileMenuOpen ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          )}
+        </svg>
+      </button>
+
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar - Desktop: Fixed, Mobile: Drawer */}
+      <motion.div
+        initial={false}
+        animate={
+          isDesktop
+            ? {} // در دسکتاپ animate نکن
+            : {
+                x: isMobileMenuOpen
+                  ? 0 
+                  : isRTL 
+                    ? '100%' 
+                    : '-100%',
+              }
+        }
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className={`md:translate-x-0 fixed top-0 h-screen w-64 z-50 ${
+          isRTL 
+            ? 'md:right-0 right-0' 
+            : 'md:left-0 left-0'
+        }`}
+        onClick={(e) => {
+          // Close mobile menu when clicking on a link
+          if (e.target instanceof HTMLAnchorElement) {
+            setIsMobileMenuOpen(false);
+          }
+        }}
+      >
+        {sidebarContent}
+      </motion.div>
+    </>
   );
 }
 

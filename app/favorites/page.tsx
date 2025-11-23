@@ -19,7 +19,7 @@ export default function FavoritesPage() {
   useEffect(() => {
     const loadFavorites = async () => {
       try {
-        const ids = getFavorites();
+        const ids = await getFavorites();
         setFavoriteIds(ids);
 
         if (ids.length > 0) {
@@ -38,8 +38,8 @@ export default function FavoritesPage() {
     loadFavorites();
   }, []);
 
-  const handleRemoveFavorite = (gameId: string) => {
-    removeFromFavorites(gameId);
+  const handleRemoveFavorite = async (gameId: string) => {
+    await removeFromFavorites(gameId);
     setFavoriteIds((prev) => prev.filter((id) => id !== gameId));
     setGames((prev) => prev.filter((game) => game.id !== gameId));
   };

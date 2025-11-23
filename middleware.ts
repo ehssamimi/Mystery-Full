@@ -9,6 +9,9 @@ export async function middleware(request: NextRequest) {
   const publicPaths = ['/login', '/api/auth/login', '/api/auth/verify', '/api/setup', '/api/games'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
+  // API های favorites نیاز به auth دارند اما middleware فقط token را چک می‌کند
+  // بررسی دقیق در خود API انجام می‌شود
+
   // اگر صفحه عمومی است، اجازه دسترسی بده
   if (isPublicPath) {
     return NextResponse.next();

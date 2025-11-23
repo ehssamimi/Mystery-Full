@@ -202,13 +202,13 @@ export default function GamesPage() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-bg-secondary/80 backdrop-blur-sm rounded-2xl p-6 border border-accent/20"
+      className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 border border-accent/20"
     >
-      <h2 className="text-2xl font-bold glow-text mb-6">
+      <h2 className="text-xl md:text-2xl font-bold glow-text mb-4 md:mb-6">
         {isCreate ? t.createGame : t.editGame}
       </h2>
-      <form onSubmit={isCreate ? handleCreate : handleUpdate} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={isCreate ? handleCreate : handleUpdate} className="space-y-3 md:space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-text-secondary">
               {t.gameName} *
@@ -248,7 +248,7 @@ export default function GamesPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-text-secondary">
               {t.minPlayers} *
@@ -357,13 +357,13 @@ export default function GamesPage() {
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           <motion.button
             type="submit"
             disabled={saving}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-6 py-2 bg-accent hover:bg-accent-glow text-white font-semibold rounded-lg transition-all duration-200 glow disabled:opacity-50"
+            className="px-4 md:px-6 py-2 text-sm md:text-base bg-accent hover:bg-accent-glow text-white font-semibold rounded-lg transition-all duration-200 glow disabled:opacity-50"
           >
             {saving ? t.saving : isCreate ? t.createGame : t.save}
           </motion.button>
@@ -375,7 +375,7 @@ export default function GamesPage() {
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-6 py-2 bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary font-semibold rounded-lg transition-all duration-200 border border-accent/20"
+            className="px-4 md:px-6 py-2 text-sm md:text-base bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary font-semibold rounded-lg transition-all duration-200 border border-accent/20"
           >
             {t.cancel}
           </motion.button>
@@ -390,16 +390,16 @@ export default function GamesPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 md:mb-8"
         >
-          <div className="flex justify-between items-center">
-            <h1 className="text-4xl font-bold glow-text">{t.gameManagement}</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h1 className="text-2xl md:text-4xl font-bold glow-text">{t.gameManagement}</h1>
             {!editingGame && !creatingGame && (
               <motion.button
                 onClick={() => setCreatingGame(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 bg-accent hover:bg-accent-glow text-white font-semibold rounded-lg transition-all duration-200 glow"
+                className="px-4 py-2 md:px-6 md:py-3 text-sm md:text-base bg-accent hover:bg-accent-glow text-white font-semibold rounded-lg transition-all duration-200 glow w-full sm:w-auto"
               >
                 + {t.createGame}
               </motion.button>
@@ -416,75 +416,129 @@ export default function GamesPage() {
             {creatingGame && renderGameForm(null, true)}
             {editingGame && renderGameForm(editingGame, false)}
             {!editingGame && !creatingGame && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-bg-secondary/80 backdrop-blur-sm rounded-2xl p-6 border border-accent/20"
-              >
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-accent/20">
-                        <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'نام' : 'Name'}</th>
-                        <th className="text-right p-4 text-text-secondary">{t.players}</th>
-                        <th className="text-right p-4 text-text-secondary">{t.category}</th>
-                        <th className="text-right p-4 text-text-secondary">{t.actions}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {games.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="p-8 text-center text-text-secondary">
-                            {t.noGames}
-                          </td>
-                        </tr>
-                      ) : (
-                        games.map((game, index) => (
-                          <motion.tr
-                            key={game.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.02 }}
-                            className="border-b border-accent/10 hover:bg-bg-tertiary/50 transition-colors"
-                          >
-                            <td className="p-4">
-                              <div>
-                                <div className="font-semibold">{game.name}</div>
-                                <div className="text-sm text-text-secondary">{game.nameEn}</div>
-                              </div>
-                            </td>
-                            <td className="p-4">
+              <>
+                {/* Mobile: Card View */}
+                <div className="md:hidden space-y-4">
+                  {games.length === 0 ? (
+                    <div className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-8 border border-accent/20 text-center text-text-secondary">
+                      {t.noGames}
+                    </div>
+                  ) : (
+                    games.map((game, index) => (
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.02 }}
+                        className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-4 border border-accent/20"
+                      >
+                        <div className="mb-3">
+                          <div className="font-semibold text-lg text-text-primary mb-1">{game.name}</div>
+                          <div className="text-sm text-text-secondary mb-2">{game.nameEn}</div>
+                          <div className="flex flex-wrap gap-2 text-sm">
+                            <span className="px-2 py-1 bg-accent/20 text-accent rounded">
                               {game.minPlayers} - {game.maxPlayers} {t.players}
-                            </td>
-                            <td className="p-4">{game.category}</td>
-                            <td className="p-4">
-                              <div className="flex gap-2">
-                                <motion.button
-                                  onClick={() => setEditingGame(game)}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="px-4 py-2 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
-                                >
-                                  {t.edit}
-                                </motion.button>
-                                <motion.button
-                                  onClick={() => handleDelete(game.id)}
-                                  disabled={deleting === game.id}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
-                                >
-                                  {deleting === game.id ? t.deleting : t.delete}
-                                </motion.button>
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                            </span>
+                            <span className="px-2 py-1 bg-bg-tertiary text-text-secondary rounded">
+                              {game.category}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <motion.button
+                            onClick={() => setEditingGame(game)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="flex-1 px-4 py-2 text-sm bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
+                          >
+                            {t.edit}
+                          </motion.button>
+                          <motion.button
+                            onClick={() => handleDelete(game.id)}
+                            disabled={deleting === game.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="flex-1 px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
+                          >
+                            {deleting === game.id ? t.deleting : t.delete}
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
                 </div>
-              </motion.div>
+
+                {/* Desktop: Table View */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hidden md:block bg-bg-secondary/80 backdrop-blur-sm rounded-2xl p-6 border border-accent/20"
+                >
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-accent/20">
+                          <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'نام' : 'Name'}</th>
+                          <th className="text-right p-4 text-text-secondary">{t.players}</th>
+                          <th className="text-right p-4 text-text-secondary">{t.category}</th>
+                          <th className="text-right p-4 text-text-secondary">{t.actions}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {games.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-8 text-center text-text-secondary">
+                              {t.noGames}
+                            </td>
+                          </tr>
+                        ) : (
+                          games.map((game, index) => (
+                            <motion.tr
+                              key={game.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.02 }}
+                              className="border-b border-accent/10 hover:bg-bg-tertiary/50 transition-colors"
+                            >
+                              <td className="p-4">
+                                <div>
+                                  <div className="font-semibold">{game.name}</div>
+                                  <div className="text-sm text-text-secondary">{game.nameEn}</div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                {game.minPlayers} - {game.maxPlayers} {t.players}
+                              </td>
+                              <td className="p-4">{game.category}</td>
+                              <td className="p-4">
+                                <div className="flex gap-2">
+                                  <motion.button
+                                    onClick={() => setEditingGame(game)}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-4 py-2 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
+                                  >
+                                    {t.edit}
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDelete(game.id)}
+                                    disabled={deleting === game.id}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
+                                  >
+                                    {deleting === game.id ? t.deleting : t.delete}
+                                  </motion.button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.div>
+              </>
             )}
           </>
         )}

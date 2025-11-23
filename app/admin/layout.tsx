@@ -35,9 +35,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen">
       <AdminSidebar />
-      <div className={`flex-1 overflow-auto ${isRTL ? 'mr-64' : 'ml-64'}`}>
+      <div className={`flex-1 overflow-auto md:min-h-screen ${
+        isRTL ? 'md:mr-64' : 'md:ml-64'
+      }`}>
         {children}
       </div>
     </div>
