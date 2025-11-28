@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useNotificationStore } from '@/lib/store/notification-store';
 
 interface Game {
   id: string;
@@ -24,6 +25,7 @@ interface Game {
 export default function GamesPage() {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
@@ -102,13 +104,22 @@ export default function GamesPage() {
           prev.map((g) => (g.id === editingGame.id ? data.game : g))
         );
         setEditingGame(null);
-        alert('بازی با موفقیت به‌روزرسانی شد');
+        addNotification({
+          type: 'success',
+          message: 'بازی با موفقیت به‌روزرسانی شد',
+        });
       } else {
-        alert(data.error || 'خطا در به‌روزرسانی بازی');
+        addNotification({
+          type: 'error',
+          message: data.error || 'خطا در به‌روزرسانی بازی',
+        });
       }
     } catch (error) {
       console.error('Error updating game:', error);
-      alert('خطا در به‌روزرسانی بازی');
+      addNotification({
+        type: 'error',
+        message: 'خطا در به‌روزرسانی بازی',
+      });
     } finally {
       setSaving(false);
     }

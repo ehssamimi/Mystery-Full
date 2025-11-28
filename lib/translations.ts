@@ -56,9 +56,16 @@ export const translations = {
     players: 'بازیکنان',
     noGames: 'هیچ بازی‌ای یافت نشد',
     deleteConfirm: 'آیا مطمئن هستید که می‌خواهید این بازی را حذف کنید؟',
+    deleteGame: 'حذف بازی',
     gameCreated: 'بازی با موفقیت ایجاد شد',
     gameUpdated: 'بازی با موفقیت به‌روزرسانی شد',
     gameDeleted: 'بازی با موفقیت حذف شد',
+    active: 'فعال',
+    inactive: 'غیرفعال',
+    activate: 'فعال کردن',
+    deactivate: 'غیرفعال کردن',
+    gameActivated: 'بازی با موفقیت فعال شد',
+    gameDeactivated: 'بازی با موفقیت غیرفعال شد',
     
     // Favorites
     favorites: 'علاقه‌مندی‌ها',
@@ -80,6 +87,8 @@ export const translations = {
     howManyPlayers: 'چند نفر هستید؟',
     player: 'بازیکن',
     startGame: 'شروع بازی 🎮',
+    increase: 'افزایش',
+    decrease: 'کاهش',
     
     // Game Details
     gameSelectedForYou: 'این بازی برای شما انتخاب شده است!',
@@ -171,9 +180,16 @@ export const translations = {
     players: 'Players',
     noGames: 'No games found',
     deleteConfirm: 'Are you sure you want to delete this game?',
+    deleteGame: 'Delete Game',
     gameCreated: 'Game created successfully',
     gameUpdated: 'Game updated successfully',
     gameDeleted: 'Game deleted successfully',
+    active: 'Active',
+    inactive: 'Inactive',
+    activate: 'Activate',
+    deactivate: 'Deactivate',
+    gameActivated: 'Game activated successfully',
+    gameDeactivated: 'Game deactivated successfully',
     
     // Favorites
     favorites: 'Favorites',
@@ -195,6 +211,8 @@ export const translations = {
     howManyPlayers: 'How many players?',
     player: 'Player',
     startGame: 'Start Game 🎮',
+    increase: 'Increase',
+    decrease: 'Decrease',
     
     // Game Details
     gameSelectedForYou: 'This game has been selected for you!',

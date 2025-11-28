@@ -1,0 +1,431 @@
+{
+  "version": "1.0",
+  "project": "Mystery Full - بازی‌های دورهمی",
+  "description": "Design System و Page Specifications برای استفاده در AIهای دیزاین",
+  "designSystem": {
+    "colors": {
+      "background": {
+        "primary": "#0f0f23",
+        "secondary": "#1a1a2e",
+        "tertiary": "#16213e"
+      },
+      "accent": {
+        "main": "#6c5ce7",
+        "glow": "#a29bfe",
+        "bright": "#c9c5ff"
+      },
+      "text": {
+        "primary": "#ffffff",
+        "secondary": "#b2bec3",
+        "muted": "#6c757d"
+      },
+      "glow": {
+        "primary": "rgba(108, 92, 231, 0.5)",
+        "secondary": "rgba(162, 155, 254, 0.8)",
+        "bright": "rgba(201, 197, 255, 0.6)"
+      },
+      "semantic": {
+        "success": "#4ecdc4",
+        "warning": "#ffe66d",
+        "error": "#ff6b6b",
+        "info": "#6c5ce7"
+      }
+    },
+    "typography": {
+      "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+      "headings": {
+        "h1": {
+          "fontSize": "clamp(2rem, 5vw, 3.5rem)",
+          "fontWeight": 700,
+          "lineHeight": 1.2,
+          "textShadow": "0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow), 0 0 30px var(--accent-glow)"
+        },
+        "h2": {
+          "fontSize": "clamp(1.5rem, 4vw, 2.5rem)",
+          "fontWeight": 700,
+          "lineHeight": 1.2
+        },
+        "h3": {
+          "fontSize": "clamp(1.25rem, 3vw, 2rem)",
+          "fontWeight": 700,
+          "lineHeight": 1.2
+        }
+      },
+      "body": {
+        "fontSize": "1rem",
+        "lineHeight": 1.6
+      }
+    },
+    "spacing": {
+      "scale": [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128],
+      "padding": {
+        "card": "24px",
+        "button": "16px 32px",
+        "input": "12px 16px",
+        "section": {
+          "mobile": "32px 16px",
+          "desktop": "64px 32px"
+        }
+      },
+      "gap": {
+        "small": "8px",
+        "medium": "16px",
+        "large": "24px",
+        "xlarge": "32px"
+      }
+    },
+    "borderRadius": {
+      "small": "8px",
+      "medium": "12px",
+      "large": "16px",
+      "xlarge": "24px",
+      "full": "9999px"
+    },
+    "shadows": {
+      "glow": {
+        "small": "0 0 10px var(--glow-primary)",
+        "medium": "0 0 20px var(--glow-primary), 0 0 40px var(--glow-secondary)",
+        "large": "0 0 30px var(--glow-primary), 0 0 60px var(--glow-secondary), 0 0 90px var(--glow-bright)"
+      },
+      "card": {
+        "default": "0 4px 15px rgba(0, 0, 0, 0.3)",
+        "hover": "0 0 20px var(--glow-primary), 0 6px 25px var(--glow-secondary)"
+      }
+    }
+  },
+  "animations": {
+    "principles": {
+      "microFeedback": {
+        "duration": "100-150ms",
+        "easing": "ease-out for entry, ease-in for exit"
+      },
+      "naturalPhysics": {
+        "easing": "easeInOut or spring({ stiffness: 200, damping: 20 })",
+        "duration": "150-300ms"
+      },
+      "hierarchy": {
+        "primaryCTA": "scale(1.05) + shadow bloom",
+        "secondary": "light opacity fade",
+        "textLinks": "color change or underline slide"
+      }
+    },
+    "patterns": {
+      "pageEntry": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "transition": { "duration": 0.5, "ease": "easeOut" }
+      },
+      "fadeIn": {
+        "initial": { "opacity": 0 },
+        "animate": { "opacity": 1 },
+        "transition": { "duration": 0.3 }
+      },
+      "scaleIn": {
+        "initial": { "opacity": 0, "scale": 0.8 },
+        "animate": { "opacity": 1, "scale": 1 },
+        "transition": { "duration": 0.5, "type": "spring", "stiffness": 200, "damping": 20 }
+      },
+      "buttonHover": {
+        "whileHover": { "scale": 1.05, "y": -2 },
+        "whileTap": { "scale": 0.95 },
+        "transition": { "duration": 0.2 }
+      },
+      "cardHover": {
+        "transform": "translateY(-4px)",
+        "borderColor": "var(--accent)",
+        "boxShadow": "0 0 20px var(--glow-primary)",
+        "transition": { "duration": 0.3, "ease": "easeOut" }
+      },
+      "infiniteScroll": {
+        "animation": "infiniteScroll 2s linear infinite",
+        "keyframes": {
+          "0%": { "transform": "translateX(0%)" },
+          "100%": { "transform": "translateX(-50%)" }
+        }
+      },
+      "explosion": {
+        "circle": {
+          "initial": { "scale": 0, "opacity": 1 },
+          "animate": { "scale": 4, "opacity": 0 },
+          "transition": { "duration": 0.8, "ease": "easeOut" }
+        },
+        "particles": {
+          "duration": 1,
+          "ease": "easeOut",
+          "delay": "random(0-0.5s)",
+          "movement": "random angle, distance 200-500px"
+        }
+      }
+    }
+  },
+  "responsive": {
+    "breakpoints": {
+      "mobile": "max-width: 768px",
+      "tablet": "768px - 1024px",
+      "desktop": "min-width: 1024px"
+    }
+  },
+  "i18n": {
+    "languages": ["fa", "en"],
+    "rtl": {
+      "fa": true,
+      "en": false
+    }
+  },
+  "pages": {
+    "home": {
+      "route": "/",
+      "title": "صفحه اصلی - انتخاب تعداد بازیکن",
+      "components": [
+        "UserNavbar",
+        "PlayerCountSlider"
+      ],
+      "layout": {
+        "container": {
+          "minHeight": "100vh",
+          "display": "flex",
+          "flexDirection": "column",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "paddingTop": { "mobile": "80px", "desktop": "96px" }
+        }
+      },
+      "elements": {
+        "title": {
+          "text": "Mystery Full",
+          "fontSize": { "mobile": "3rem", "desktop": "4.5rem" },
+          "className": "glow-text",
+          "animation": {
+            "initial": { "opacity": 0, "y": -50 },
+            "animate": { "opacity": 1, "y": 0 },
+            "transition": { "duration": 0.6, "ease": "easeOut" }
+          }
+        },
+        "slider": {
+          "range": "2-20+",
+          "thumb": {
+            "size": "24px",
+            "glow": true
+          }
+        },
+        "startButton": {
+          "className": "btn-primary glow-lg",
+          "animation": {
+            "initial": { "opacity": 0, "y": 50 },
+            "animate": { "opacity": 1, "y": 0 },
+            "transition": { "delay": 0.8, "duration": 0.6 },
+            "whileHover": { "scale": 1.05, "y": -2 }
+          }
+        }
+      }
+    },
+    "gamesRoulette": {
+      "route": "/games?players={count}",
+      "title": "صفحه انتخاب بازی - چرخش و انتخاب تصادفی",
+      "components": [
+        "UserNavbar",
+        "GameRoulette",
+        "ExplosionParticles"
+      ],
+      "layout": {
+        "container": {
+          "minHeight": "100vh",
+          "display": "flex",
+          "flexDirection": "column",
+          "alignItems": "center",
+          "justifyContent": "center"
+        }
+      },
+      "elements": {
+        "rouletteContainer": {
+          "width": "100%",
+          "maxWidth": "1152px",
+          "height": "200px",
+          "position": "relative"
+        },
+        "centerHighlight": {
+          "size": { "mobile": "128px", "desktop": "160px" },
+          "border": "4px solid var(--accent)",
+          "className": "glow-lg"
+        },
+        "gameBoxes": {
+          "animation": {
+            "spinning": "infiniteScroll 2s linear infinite",
+            "stopped": "transform translateX with calculated offset, transition 1.2s"
+          }
+        },
+        "explosion": {
+          "trigger": "when game selected",
+          "particles": {
+            "count": 50,
+            "colors": ["#6c5ce7", "#a29bfe", "#c9c5ff", "#ff6b6b", "#4ecdc4", "#ffe66d"]
+          }
+        }
+      }
+    },
+    "gameDetails": {
+      "route": "/games/[id]",
+      "title": "صفحه جزئیات بازی",
+      "components": [
+        "UserNavbar",
+        "GameDetails"
+      ],
+      "layout": {
+        "container": {
+          "maxWidth": "1024px",
+          "padding": { "mobile": "16px", "desktop": "32px" }
+        }
+      },
+      "elements": {
+        "gameTitle": {
+          "fontSize": { "mobile": "3rem", "desktop": "4.5rem" },
+          "className": "glow-text",
+          "animation": {
+            "pulse": {
+              "scale": [1, 1.05, 1],
+              "duration": 2,
+              "repeat": "Infinity"
+            }
+          }
+        },
+        "infoCards": {
+          "grid": { "mobile": "2 columns", "desktop": "4 columns" },
+          "stagger": "0.1s delay per card"
+        },
+        "actionButtons": {
+          "layout": { "mobile": "column", "desktop": "row" }
+        }
+      }
+    },
+    "favorites": {
+      "route": "/favorites",
+      "title": "صفحه علاقه‌مندی‌ها",
+      "components": [
+        "UserNavbar"
+      ],
+      "layout": {
+        "container": {
+          "maxWidth": "1280px",
+          "padding": { "mobile": "16px", "desktop": "32px" }
+        }
+      },
+      "elements": {
+        "gamesGrid": {
+          "grid": {
+            "mobile": "1 column",
+            "tablet": "2 columns",
+            "desktop": "3 columns"
+          },
+          "stagger": "0.1s delay per card"
+        },
+        "emptyState": {
+          "icon": "💔",
+          "animation": {
+            "initial": { "opacity": 0, "scale": 0.9 },
+            "animate": { "opacity": 1, "scale": 1 }
+          }
+        }
+      }
+    },
+    "login": {
+      "route": "/login",
+      "title": "صفحه ورود - احراز هویت",
+      "components": [],
+      "layout": {
+        "container": {
+          "minHeight": "100vh",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center"
+        }
+      },
+      "elements": {
+        "card": {
+          "maxWidth": "448px",
+          "background": "var(--bg-secondary) 80% opacity",
+          "backdropFilter": "blur(12px)",
+          "borderRadius": "16px",
+          "padding": "32px"
+        },
+        "codeInputs": {
+          "count": 6,
+          "size": { "mobile": "48px", "desktop": "56px" },
+          "fontSize": { "mobile": "1.5rem", "desktop": "1.875rem" },
+          "stagger": "0.05s delay per input"
+        }
+      }
+    },
+    "navbar": {
+      "component": "UserNavbar",
+      "position": "fixed top",
+      "zIndex": 50,
+      "background": "var(--bg-secondary) 90% opacity",
+      "backdropFilter": "blur(12px)",
+      "elements": {
+        "logo": {
+          "fontSize": { "mobile": "1.5rem", "desktop": "1.875rem" },
+          "className": "glow-text"
+        },
+        "actions": {
+          "favorites": {
+            "icon": "heart",
+            "color": "var(--accent)"
+          },
+          "language": {
+            "switcher": true
+          },
+          "logout": {
+            "color": "red-300",
+            "background": "red-500/20"
+          }
+        }
+      }
+    }
+  },
+  "accessibility": {
+    "reducedMotion": {
+      "mediaQuery": "@media (prefers-reduced-motion: reduce)",
+      "rules": {
+        "animationDuration": "0.01ms",
+        "transitionDuration": "0.01ms"
+      }
+    },
+    "keyboardNavigation": {
+      "focusVisible": "outline with accent color",
+      "tabOrder": "logical flow"
+    },
+    "contrast": {
+      "requirement": "WCAG AA compliant"
+    }
+  },
+  "visualStyle": {
+    "background": {
+      "type": "animated gradient",
+      "colors": ["#0f0f23", "#1a1a2e", "#16213e", "#0f0f23"],
+      "animation": "15s infinite ease"
+    },
+    "glassMorphism": {
+      "backdropBlur": true,
+      "opacity": "80-90%",
+      "border": "subtle accent color low opacity"
+    },
+    "glowHierarchy": {
+      "small": "icons, small elements",
+      "medium": "buttons, cards on hover",
+      "large": "primary CTAs, selected items",
+      "text": "headings and important text"
+    }
+  },
+  "usageNotes": {
+    "forAI": [
+      "Structure First: ابتدا ساختار layout را درک کنید",
+      "Color Consistency: از palette تعریف شده استفاده کنید",
+      "Animation Timing: timing مشخص شده را رعایت کنید",
+      "Responsive: mobile-first طراحی کنید",
+      "RTL Support: برای فارسی RTL باشد",
+      "Glow Effects: subtle و purposeful باشند",
+      "Accessibility: reduced motion و contrast را در نظر بگیرید"
+    ]
+  }
+}
+

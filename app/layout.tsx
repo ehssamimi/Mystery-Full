@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import LanguageProvider from '@/components/LanguageProvider';
+import ToastContainer from '@/components/ToastContainer';
 
 export const metadata: Metadata = {
   title: 'Mystery Full - بازی‌های دورهمی',
@@ -32,7 +33,10 @@ export default function RootLayout({
       </head>
       <body className="animated-bg min-h-screen" suppressHydrationWarning>
         <div className="particles" />
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          {children}
+          <ToastContainer />
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -15,6 +15,9 @@ interface GameRouletteProps {
 }
 
 export default function GameRoulette({ games, playerCount }: GameRouletteProps) {
+  // Validate games prop - ensure it's always an array
+  const validGames = Array.isArray(games) ? games : [];
+  
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isSpinning, setIsSpinning] = useState(true);
   const [isShaking, setIsShaking] = useState(false);
@@ -32,16 +35,17 @@ export default function GameRoulette({ games, playerCount }: GameRouletteProps) 
   // Shuffle games for display and create more boxes for visual effect
   // If we don't have enough games, duplicate them to fill the display
   const finalDisplayGames = useMemo(() => {
-    if (games.length === 0) return [];
+    // Use validated games array
+    if (validGames.length === 0) return [];
     
-    const shuffledGames = [...games].sort(() => Math.random() - 0.5);
+    const shuffledGames = [...validGames].sort(() => Math.random() - 0.5);
     const displayGames = shuffledGames.slice(0, Math.min(10, shuffledGames.length));
     
     // If we have fewer games than needed, duplicate them
     return displayGames.length > 0
       ? [...Array(10)].map((_, i) => displayGames[i % displayGames.length])
       : [];
-  }, [games]);
+  }, [validGames]);
 
   // Reset position when spinning stops - ensure smooth transition
   useEffect(() => {

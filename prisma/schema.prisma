@@ -55,6 +55,7 @@ model Game {
   difficulty  String     @default("medium")
   duration    Int        // in minutes
   materials   String?    // مواد مورد نیاز
+  isActive    Boolean    @default(true) // فعال/غیرفعال بودن بازی
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   favorites   Favorite[]

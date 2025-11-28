@@ -70,6 +70,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('Update request body:', body);
+    
     const updateSchema = z.object({
       id: z.string(),
       name: z.string().optional(),
@@ -83,10 +85,33 @@ export async function PUT(request: NextRequest) {
       difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
       duration: z.number().int().positive().optional(),
       materials: z.string().optional(),
+      isActive: z.boolean().optional(),
     });
 
     const data = updateSchema.parse(body);
     const { id, ...updateData } = data;
+    
+    console.log('Update data:', { id, updateData });
+
+    // بررسی اینکه آیا حداقل یک فیلد برای به‌روزرسانی وجود دارد
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'هیچ فیلدی برای به‌روزرسانی ارسال نشده است' },
+        { status: 400 }
+      );
+    }
+
+    // بررسی وجود بازی قبل از به‌روزرسانی
+    const existingGame = await prisma.game.findUnique({
+      where: { id },
+    });
+
+    if (!existingGame) {
+      return NextResponse.json(
+        { success: false, error: 'بازی یافت نشد' },
+        { status: 404 }
+      );
+    }
 
     const game = await prisma.game.update({
       where: { id },
@@ -99,15 +124,23 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.errors);
       return NextResponse.json(
         { success: false, error: error.errors[0].message },
         { status: 400 }
       );
     }
 
+    // Log the full error for debugging
     console.error('Update game error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'خطا در ویرایش بازی';
+    
     return NextResponse.json(
-      { success: false, error: 'خطا در ویرایش بازی' },
+      { 
+        success: false, 
+        error: 'خطا در ویرایش بازی',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

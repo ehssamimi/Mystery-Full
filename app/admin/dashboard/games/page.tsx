@@ -6,6 +6,9 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
+import DeleteModal from '@/components/DeleteModal';
+import { useNotificationStore } from '@/lib/store/notification-store';
+import { Switch } from '@/components/ui/switch';
 
 interface Game {
   id: string;
@@ -20,19 +23,25 @@ interface Game {
   difficulty: string;
   duration: number;
   materials?: string;
+  isActive: boolean;
 }
 
 export default function GamesPage() {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
-  const { language } = useLanguageStore();
+  const { language, isRTL } = useLanguageStore();
   const t = translations[language];
+  const { addNotification } = useNotificationStore();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [creatingGame, setCreatingGame] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
+  const [togglingActive, setTogglingActive] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     checkAuth();
@@ -97,13 +106,22 @@ export default function GamesPage() {
       if (data.success) {
         setGames((prev) => [data.game, ...prev]);
         setCreatingGame(false);
-        alert(t.gameCreated);
+        addNotification({
+          type: 'success',
+          message: t.gameCreated,
+        });
       } else {
-        alert(data.error || t.error);
+        addNotification({
+          type: 'error',
+          message: data.error || t.error,
+        });
       }
     } catch (error) {
       console.error('Error creating game:', error);
-      alert('خطا در ایجاد بازی');
+      addNotification({
+        type: 'error',
+        message: 'خطا در ایجاد بازی',
+      });
     } finally {
       setSaving(false);
     }
@@ -150,45 +168,115 @@ export default function GamesPage() {
           prev.map((g) => (g.id === editingGame.id ? data.game : g))
         );
         setEditingGame(null);
-        alert(t.gameUpdated);
+        addNotification({
+          type: 'success',
+          message: t.gameUpdated,
+        });
       } else {
-        alert(data.error || t.error);
+        addNotification({
+          type: 'error',
+          message: data.error || t.error,
+        });
       }
     } catch (error) {
       console.error('Error updating game:', error);
-      alert(t.error);
+      addNotification({
+        type: 'error',
+        message: t.error,
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (gameId: string) => {
-    if (!confirm(t.deleteConfirm)) {
-      return;
-    }
+  const handleDeleteClick = (game: Game) => {
+    setGameToDelete(game);
+    setDeleteModalOpen(true);
+  };
 
-    setDeleting(gameId);
+  const handleDeleteConfirm = async () => {
+    if (!gameToDelete) return;
+
+    setDeleting(gameToDelete.id);
 
     try {
-      const response = await fetch(`/api/admin/games?id=${gameId}`, {
+      const response = await fetch(`/api/admin/games?id=${gameToDelete.id}`, {
         method: 'DELETE',
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setGames((prev) => prev.filter((g) => g.id !== gameId));
-        alert(t.gameDeleted);
+        setGames((prev) => prev.filter((g) => g.id !== gameToDelete.id));
+        setDeleteModalOpen(false);
+        setGameToDelete(null);
+        addNotification({
+          type: 'success',
+          message: t.gameDeleted,
+        });
       } else {
-        alert(data.error || t.error);
+        addNotification({
+          type: 'error',
+          message: data.error || t.error,
+        });
       }
     } catch (error) {
       console.error('Error deleting game:', error);
-      alert(t.error);
+      addNotification({
+        type: 'error',
+        message: t.error,
+      });
     } finally {
       setDeleting(null);
     }
   };
+
+  const handleToggleActive = async (game: Game, newValue: boolean) => {
+    setTogglingActive(game.id);
+
+    try {
+      const response = await fetch('/api/admin/games', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: game.id, isActive: newValue }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setGames((prev) =>
+          prev.map((g) => (g.id === game.id ? data.game : g))
+        );
+        addNotification({
+          type: 'success',
+          message: newValue ? t.gameActivated : t.gameDeactivated,
+        });
+      } else {
+        addNotification({
+          type: 'error',
+          message: data.error || t.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling game active status:', error);
+      addNotification({
+        type: 'error',
+        message: t.error,
+      });
+    } finally {
+      setTogglingActive(null);
+    }
+  };
+
+  // Filter games based on search query (both Persian and English names)
+  const filteredGames = games.filter((game) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      game.name.toLowerCase().includes(query) ||
+      game.nameEn.toLowerCase().includes(query)
+    );
+  });
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
@@ -417,14 +505,97 @@ export default function GamesPage() {
             {editingGame && renderGameForm(editingGame, false)}
             {!editingGame && !creatingGame && (
               <>
+                {/* Search Input */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 md:mb-6"
+                >
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={language === 'fa' ? 'جستجو بر اساس نام (فارسی یا انگلیسی)...' : 'Search by name (Persian or English)...'}
+                      dir={isRTL ? 'rtl' : 'ltr'}
+                      style={{
+                        paddingTop: '0.75rem',
+                        paddingBottom: '0.75rem',
+                        ...(isRTL
+                          ? searchQuery
+                            ? { paddingRight: '1rem', paddingLeft: '3rem' }
+                            : { paddingRight: '47px', paddingLeft: '1rem' }
+                          : searchQuery
+                            ? { paddingLeft: '1rem', paddingRight: '3rem' }
+                            : { paddingLeft: '47px', paddingRight: '1rem' }),
+                      }}
+                      className="w-full bg-bg-secondary/80 backdrop-blur-sm border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200"
+                    />
+                    {/* Search Icon - Only show when input is empty */}
+                    {!searchQuery && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'}`}
+                      >
+                        <svg
+                          className="w-5 h-5 text-text-secondary pointer-events-none"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                      </motion.div>
+                    )}
+                    {/* Clear Button - Positioned higher and centered */}
+                    {searchQuery && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        onClick={() => setSearchQuery('')}
+                        className={`absolute top-[35%] transform -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50 transition-all duration-200 ${
+                          isRTL ? 'left-3' : 'right-3'
+                        }`}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        aria-label={language === 'fa' ? 'پاک کردن' : 'Clear'}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+
                 {/* Mobile: Card View */}
                 <div className="md:hidden space-y-4">
-                  {games.length === 0 ? (
+                  {filteredGames.length === 0 ? (
                     <div className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-8 border border-accent/20 text-center text-text-secondary">
-                      {t.noGames}
+                      {searchQuery ? (language === 'fa' ? 'نتیجه‌ای یافت نشد' : 'No results found') : t.noGames}
                     </div>
                   ) : (
-                    games.map((game, index) => (
+                    filteredGames.map((game, index) => (
                       <motion.div
                         key={game.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -433,7 +604,39 @@ export default function GamesPage() {
                         className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl p-4 border border-accent/20"
                       >
                         <div className="mb-3">
-                          <div className="font-semibold text-lg text-text-primary mb-1">{game.name}</div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-semibold text-lg text-text-primary">{game.name}</div>
+                            {togglingActive === game.id ? (
+                              <div className="flex items-center justify-center h-6 w-11">
+                                <svg
+                                  className="animate-spin h-4 w-4 text-accent"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              </div>
+                            ) : (
+                              <Switch
+                                checked={game.isActive}
+                                onChange={(checked) => handleToggleActive(game, checked)}
+                                disabled={togglingActive === game.id}
+                              />
+                            )}
+                          </div>
                           <div className="text-sm text-text-secondary mb-2">{game.nameEn}</div>
                           <div className="flex flex-wrap gap-2 text-sm">
                             <span className="px-2 py-1 bg-accent/20 text-accent rounded">
@@ -444,24 +647,26 @@ export default function GamesPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <motion.button
-                            onClick={() => setEditingGame(game)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="flex-1 px-4 py-2 text-sm bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
-                          >
-                            {t.edit}
-                          </motion.button>
-                          <motion.button
-                            onClick={() => handleDelete(game.id)}
-                            disabled={deleting === game.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="flex-1 px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
-                          >
-                            {deleting === game.id ? t.deleting : t.delete}
-                          </motion.button>
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <motion.button
+                              onClick={() => setEditingGame(game)}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="flex-1 px-4 py-2 text-sm bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
+                            >
+                              {t.edit}
+                            </motion.button>
+                            <motion.button
+                              onClick={() => handleDeleteClick(game)}
+                              disabled={deleting === game.id}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="flex-1 px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
+                            >
+                              {t.delete}
+                            </motion.button>
+                          </div>
                         </div>
                       </motion.div>
                     ))
@@ -481,18 +686,19 @@ export default function GamesPage() {
                           <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'نام' : 'Name'}</th>
                           <th className="text-right p-4 text-text-secondary">{t.players}</th>
                           <th className="text-right p-4 text-text-secondary">{t.category}</th>
+                          <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'وضعیت' : 'Status'}</th>
                           <th className="text-right p-4 text-text-secondary">{t.actions}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {games.length === 0 ? (
+                        {filteredGames.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="p-8 text-center text-text-secondary">
-                              {t.noGames}
+                            <td colSpan={5} className="p-8 text-center text-text-secondary">
+                              {searchQuery ? (language === 'fa' ? 'نتیجه‌ای یافت نشد' : 'No results found') : t.noGames}
                             </td>
                           </tr>
                         ) : (
-                          games.map((game, index) => (
+                          filteredGames.map((game, index) => (
                             <motion.tr
                               key={game.id}
                               initial={{ opacity: 0, y: 10 }}
@@ -511,24 +717,67 @@ export default function GamesPage() {
                               </td>
                               <td className="p-4">{game.category}</td>
                               <td className="p-4">
-                                <div className="flex gap-2">
-                                  <motion.button
-                                    onClick={() => setEditingGame(game)}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="px-4 py-2 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
-                                  >
-                                    {t.edit}
-                                  </motion.button>
-                                  <motion.button
-                                    onClick={() => handleDelete(game.id)}
-                                    disabled={deleting === game.id}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
-                                  >
-                                    {deleting === game.id ? t.deleting : t.delete}
-                                  </motion.button>
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    game.isActive
+                                      ? 'bg-green-500/20 text-green-300'
+                                      : 'bg-red-500/20 text-red-300'
+                                  }`}
+                                >
+                                  {game.isActive ? t.active : t.inactive}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  {togglingActive === game.id ? (
+                                    <div className="flex items-center justify-center h-6 w-11">
+                                      <svg
+                                        className="animate-spin h-4 w-4 text-accent"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                      </svg>
+                                    </div>
+                                  ) : (
+                                    <Switch
+                                      checked={game.isActive}
+                                      onChange={(checked) => handleToggleActive(game, checked)}
+                                      disabled={togglingActive === game.id}
+                                    />
+                                  )}
+                                  <div className="flex gap-2">
+                                    <motion.button
+                                      onClick={() => setEditingGame(game)}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      className="px-4 py-2 bg-accent/20 hover:bg-accent/30 text-accent rounded-lg transition-all duration-200"
+                                    >
+                                      {t.edit}
+                                    </motion.button>
+                                    <motion.button
+                                      onClick={() => handleDeleteClick(game)}
+                                      disabled={deleting === game.id}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200 disabled:opacity-50"
+                                    >
+                                      {t.delete}
+                                    </motion.button>
+                                  </div>
                                 </div>
                               </td>
                             </motion.tr>
@@ -543,6 +792,23 @@ export default function GamesPage() {
           </>
         )}
       </div>
+
+      {/* Delete Modal */}
+      <DeleteModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (!deleting) {
+            setDeleteModalOpen(false);
+            setGameToDelete(null);
+          }
+        }}
+        onConfirm={handleDeleteConfirm}
+        title={t.deleteGame}
+        message={t.deleteConfirm}
+        confirmText={t.delete}
+        cancelText={t.cancel}
+        isLoading={deleting !== null}
+      />
     </div>
   );
 }

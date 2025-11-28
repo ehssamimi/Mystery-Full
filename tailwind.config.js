@@ -18,6 +18,15 @@ module.exports = {
           glow: '#a29bfe',
           bright: '#c9c5ff',
         },
+        'bg-primary': '#0f0f23',
+        'bg-secondary': '#1a1a2e',
+        'bg-tertiary': '#16213e',
+        'text-primary': '#ffffff',
+        'text-secondary': '#b2bec3',
+        'text-muted': '#6c757d',
+      },
+      data: {
+        checked: 'data-[checked]:',
       },
       boxShadow: {
         glow: '0 0 20px rgba(108, 92, 231, 0.5)',

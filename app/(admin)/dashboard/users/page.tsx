@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { useNotificationStore } from '@/lib/store/notification-store';
 
 interface User {
   id: string;
@@ -17,6 +18,7 @@ interface User {
 export default function UsersPage() {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -54,7 +56,10 @@ export default function UsersPage() {
 
   const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
     if (userId === user?.id) {
-      alert('نمی‌توانید نقش خود را تغییر دهید');
+      addNotification({
+        type: 'warning',
+        message: 'نمی‌توانید نقش خود را تغییر دهید',
+      });
       return;
     }
 
@@ -73,12 +78,22 @@ export default function UsersPage() {
         setUsers((prev) =>
           prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
         );
+        addNotification({
+          type: 'success',
+          message: 'نقش کاربر با موفقیت تغییر کرد',
+        });
       } else {
-        alert(data.error || 'خطا در تغییر نقش');
+        addNotification({
+          type: 'error',
+          message: data.error || 'خطا در تغییر نقش',
+        });
       }
     } catch (error) {
       console.error('Error updating user role:', error);
-      alert('خطا در تغییر نقش');
+      addNotification({
+        type: 'error',
+        message: 'خطا در تغییر نقش',
+      });
     } finally {
       setUpdating(null);
     }

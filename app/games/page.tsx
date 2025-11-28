@@ -22,7 +22,14 @@ export default function GamesPage() {
       try {
         const response = await fetch(`/api/games?players=${playerCount}`);
         const data = await response.json();
-        setGames(data);
+        
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          setGames(data);
+        } else {
+          console.error('Invalid games data format:', data);
+          setGames([]);
+        }
       } catch (error) {
         console.error('Error fetching games:', error);
         setGames([]);

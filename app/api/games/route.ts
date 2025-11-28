@@ -7,6 +7,9 @@ export async function GET(request: Request) {
     const playerCount = searchParams.get('players');
 
     let games = await prisma.game.findMany({
+      where: {
+        isActive: true, // فقط بازی‌های فعال را برگردان
+      },
       orderBy: {
         name: 'asc',
       },
@@ -20,11 +23,11 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(games);
+    return NextResponse.json(games || []);
   } catch (error) {
     console.error('Error fetching games:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch games' },
+      [],
       { status: 500 }
     );
   }
