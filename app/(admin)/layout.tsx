@@ -14,7 +14,10 @@ export default function AdminLayout({
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    // ما می‌خواهیم فقط یک بار در سطح لایه ادمین وضعیت احراز هویت را چک کنیم
+    // سایر صفحات ادمین دیگر checkAuth را صدا نمی‌زنند
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {

@@ -68,23 +68,28 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // آمار کاربران در 90 روز گذشته (روزانه) - استفاده از raw query برای بهینه‌سازی
+    // آمار کاربران در ۱۲ ماه گذشته (روزانه) - استفاده از raw query برای بهینه‌سازی
     const dailyUserStatsRaw = await prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
       SELECT 
         DATE("createdAt") as date,
         COUNT(*)::int as count
       FROM "User"
-      WHERE "createdAt" >= NOW() - INTERVAL '90 days'
+      WHERE "createdAt" >= NOW() - INTERVAL '365 days'
       GROUP BY DATE("createdAt")
       ORDER BY date ASC
     `;
 
-    // تبدیل به فرمت مورد نیاز و پر کردن روزهای خالی
+    // تبدیل به فرمت مورد نیاز و پر کردن روزهای خالی (۳۶۵ روز گذشته)
+    // نرمال‌سازی کلید تاریخ تا با فرمت YYYY-MM-DD که در حلقه استفاده می‌شود یکسان باشد
+    // (ممکن است مقدار برگشتی از Postgres شامل زمان یا timezone باشد)
     const dailyUserStatsMap = new Map(
-      dailyUserStatsRaw.map((item) => [item.date, Number(item.count)])
+      dailyUserStatsRaw.map((item) => {
+        const dateKey = new Date(item.date).toISOString().split('T')[0];
+        return [dateKey, Number(item.count)];
+      })
     );
     const dailyUserStats = [];
-    for (let i = 89; i >= 0; i--) {
+    for (let i = 364; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
       dailyUserStats.push({

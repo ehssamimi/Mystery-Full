@@ -15,6 +15,7 @@ model User {
   updatedAt DateTime  @updatedAt
   sessions  Session[]
   favorites Favorite[]
+  ratings   GameRating[]
 }
 
 model VerificationCode {
@@ -49,16 +50,32 @@ model Game {
   description String
   minPlayers  Int
   maxPlayers  Int
+
+  // متن سازگار با نسخه قبلی (برای نمایش سریع و API عمومی)
   category    String
+  difficulty  String     @default("medium")
+  materials   String?    // مواد مورد نیاز به‌صورت متن آزاد
+
   rules       String
   tips        String?
-  difficulty  String     @default("medium")
   duration    Int        // in minutes
-  materials   String?    // مواد مورد نیاز
   isActive    Boolean    @default(true) // فعال/غیرفعال بودن بازی
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  // روابط
   favorites   Favorite[]
+  ratings     GameRating[]
+
+  // امتیازدهی تجمیعی
+  score        Float     @default(5)   // میانگین امتیاز (۱ تا ۵)، مقدار اولیه ۵
+  ratingsCount Int       @default(1)   // تعداد رأی‌ها، مقدار اولیه ۱ برای رای پیش‌فرض
+
+  difficultyLevelId String?
+  difficultyLevel   DifficultyLevel? @relation(fields: [difficultyLevelId], references: [id], onDelete: SetNull)
+
+  categories    GameCategory[]
+  requiredItems GameRequiredItem[]
 }
 
 model Favorite {
@@ -73,5 +90,88 @@ model Favorite {
   @@index([userId])
   @@index([gameId])
   @@index([createdAt])
+}
+
+// سطح دشواری - تنظیمات
+model DifficultyLevel {
+  id        String   @id @default(cuid())
+  nameFa    String
+  nameEn    String
+  value     String   @unique // easy | medium | hard
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  games Game[]
+}
+
+// دسته‌بندی - تنظیمات
+model Category {
+  id        String          @id @default(cuid())
+  nameFa    String
+  nameEn    String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  games     GameCategory[]
+}
+
+// موارد مورد نیاز - تنظیمات
+model RequiredItem {
+  id        String             @id @default(cuid())
+  nameFa    String
+  nameEn    String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  games     GameRequiredItem[]
+}
+
+// ارتباط چند-به-چند بازی و دسته‌بندی
+model GameCategory {
+  id         String   @id @default(cuid())
+  gameId     String
+  categoryId String
+
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([gameId, categoryId])
+  @@index([gameId])
+  @@index([categoryId])
+}
+
+// ارتباط چند-به-چند بازی و موارد مورد نیاز
+model GameRequiredItem {
+  id             String        @id @default(cuid())
+  gameId         String
+  requiredItemId String
+
+  game           Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  requiredItem   RequiredItem  @relation(fields: [requiredItemId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime      @default(now())
+
+  @@unique([gameId, requiredItemId])
+  @@index([gameId])
+  @@index([requiredItemId])
+}
+
+// امتیازدهی کاربران به بازی‌ها
+model GameRating {
+  id        String   @id @default(cuid())
+  gameId    String
+  userId    String
+  score     Int      // ۱ تا ۵
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
 }
 

@@ -11,10 +11,6 @@ export default function AdminDashboard() {
   const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }

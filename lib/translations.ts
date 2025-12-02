@@ -67,6 +67,22 @@ export const translations = {
     gameActivated: 'بازی با موفقیت فعال شد',
     gameDeactivated: 'بازی با موفقیت غیرفعال شد',
     
+    // Settings
+    settings: 'تنظیمات',
+    categories: 'دسته‌بندی‌ها',
+    difficultyLevels: 'سطوح دشواری',
+    requiredItems: 'موارد مورد نیاز',
+    difficultyLevelManagement: 'مدیریت سطوح دشواری',
+    categoryManagement: 'مدیریت دسته‌بندی‌ها',
+    requiredItemManagement: 'مدیریت موارد مورد نیاز',
+    nameFa: 'نام فارسی',
+    nameEn: 'نام انگلیسی',
+    create: 'ایجاد',
+    update: 'به‌روزرسانی',
+    itemCreated: 'آیتم با موفقیت ایجاد شد',
+    itemUpdated: 'آیتم با موفقیت به‌روزرسانی شد',
+    itemDeleted: 'آیتم با موفقیت حذف شد',
+    
     // Favorites
     favorites: 'علاقه‌مندی‌ها',
     myFavorites: 'علاقه‌مندی‌های من',
@@ -102,6 +118,9 @@ export const translations = {
     gameRules: 'قوانین بازی',
     importantTips: 'نکات مهم',
     backToHome: 'بازگشت به خانه',
+    rateGame: 'امتیاز به بازی',
+    yourRating: 'امتیاز شما',
+    favoriteGame: 'بازی مورد علاقه',
     
     // Game Roulette
     selecting: 'در حال انتخاب...',
@@ -191,6 +210,22 @@ export const translations = {
     gameActivated: 'Game activated successfully',
     gameDeactivated: 'Game deactivated successfully',
     
+    // Settings
+    settings: 'Settings',
+    categories: 'Categories',
+    difficultyLevels: 'Difficulty Levels',
+    requiredItems: 'Required Items',
+    difficultyLevelManagement: 'Difficulty Level Management',
+    categoryManagement: 'Category Management',
+    requiredItemManagement: 'Required Item Management',
+    nameFa: 'Persian Name',
+    nameEn: 'English Name',
+    create: 'Create',
+    update: 'Update',
+    itemCreated: 'Item created successfully',
+    itemUpdated: 'Item updated successfully',
+    itemDeleted: 'Item deleted successfully',
+    
     // Favorites
     favorites: 'Favorites',
     myFavorites: 'My Favorites',
@@ -226,6 +261,9 @@ export const translations = {
     gameRules: 'Game Rules',
     importantTips: 'Important Tips',
     backToHome: 'Back to Home',
+    rateGame: 'Rate this game',
+    yourRating: 'Your rating',
+    favoriteGame: 'Favorite game',
     
     // Game Roulette
     selecting: 'Selecting...',

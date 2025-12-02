@@ -9,7 +9,7 @@ import { translations } from '@/lib/translations';
 
 export default function PlayerCountSlider() {
   const [playerCount, setPlayerCountState] = useState(2);
-  const [isHolding, setIsHolding] = useState<'increment' | 'decrement' | null>(null);
+  const [holdType, setHoldType] = useState<'increment' | 'decrement' | null>(null);
   const router = useRouter();
   const { language, isRTL } = useLanguageStore();
   const t = translations[language];
@@ -17,6 +17,7 @@ export default function PlayerCountSlider() {
   // Refs for long press functionality
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressRef = useRef(false);
   const playerCountRef = useRef(playerCount);
   
   // Keep ref in sync with state
@@ -36,7 +37,7 @@ export default function PlayerCountSlider() {
     };
   }, []);
 
-  // Handle continuous increment/decrement
+  // Handle continuous increment/decrement when holding
   useEffect(() => {
     // Clear any existing interval first
     if (intervalRef.current) {
@@ -44,28 +45,24 @@ export default function PlayerCountSlider() {
       intervalRef.current = null;
     }
 
-    if (isHolding === 'increment' && playerCount < 20) {
+    if (holdType === 'increment' || holdType === 'decrement') {
       intervalRef.current = setInterval(() => {
         setPlayerCountState((prev) => {
-          const newValue = Math.min(20, prev + 1);
-          // Stop if we reached max
-          if (newValue >= 20) {
-            setIsHolding(null);
+          if (holdType === 'increment') {
+            const next = Math.min(20, prev + 1);
+            if (next >= 20) {
+              setHoldType(null);
+            }
+            return next;
+          } else {
+            const next = Math.max(2, prev - 1);
+            if (next <= 2) {
+              setHoldType(null);
+            }
+            return next;
           }
-          return newValue;
         });
-      }, 100); // Update every 100ms for smooth continuous change
-    } else if (isHolding === 'decrement' && playerCount > 2) {
-      intervalRef.current = setInterval(() => {
-        setPlayerCountState((prev) => {
-          const newValue = Math.max(2, prev - 1);
-          // Stop if we reached min
-          if (newValue <= 2) {
-            setIsHolding(null);
-          }
-          return newValue;
-        });
-      }, 100);
+      }, 70); // long press سرعت بیشتر
     }
 
     return () => {
@@ -74,40 +71,42 @@ export default function PlayerCountSlider() {
         intervalRef.current = null;
       }
     };
-  }, [isHolding, playerCount]);
+  }, [holdType]);
 
-  // Start holding (with initial delay)
-  const handleMouseDown = (type: 'increment' | 'decrement') => {
-    // First click happens immediately
-    setPlayerCountState((prev) => {
-      if (type === 'increment' && prev < 20) {
-        return Math.min(20, prev + 1);
-      } else if (type === 'decrement' && prev > 2) {
-        return Math.max(2, prev - 1);
-      }
-      return prev;
-    });
-
-    // After 300ms delay, start continuous increment/decrement
+  // Start press (decide later if it is click or long-press)
+  const handlePressStart = (type: 'increment' | 'decrement') => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    isLongPressRef.current = false;
     timeoutRef.current = setTimeout(() => {
-      // Check current value using ref to get latest state
       const currentValue = playerCountRef.current;
       if (
         (type === 'increment' && currentValue < 20) ||
         (type === 'decrement' && currentValue > 2)
       ) {
-        setIsHolding(type);
+        isLongPressRef.current = true;
+        setHoldType(type);
       }
-    }, 300);
+    }, 300); // بعد از 300ms long-press حساب می‌شود
   };
 
-  // Stop holding
-  const handleMouseUp = () => {
+  // Stop press
+  const handlePressEnd = (type: 'increment' | 'decrement') => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    setIsHolding(null);
+    // اگر long-press نشده، این یک کلیک ساده است → یک واحد تغییر بده
+    if (!isLongPressRef.current) {
+      setPlayerCountState((prev) => {
+        if (type === 'increment') {
+          return Math.min(20, prev + 1);
+        }
+        return Math.max(2, prev - 1);
+      });
+    }
+    setHoldType(null);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -117,17 +116,25 @@ export default function PlayerCountSlider() {
   // Handle touch events for mobile
   const handleTouchStart = (type: 'increment' | 'decrement', e: React.TouchEvent) => {
     e.preventDefault();
-    handleMouseDown(type);
+    handlePressStart(type);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (type: 'increment' | 'decrement', e: React.TouchEvent) => {
     e.preventDefault();
-    handleMouseUp();
+    handlePressEnd(type);
   };
 
   // Handle mouse leave (stop if user drags away)
   const handleMouseLeave = () => {
-    handleMouseUp();
+    setHoldType(null);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   };
 
   const handleStart = () => {
@@ -136,7 +143,7 @@ export default function PlayerCountSlider() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center pt-20 md:pt-24 p-4 relative z-10">
+    <div className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center pt-24 p-4 relative z-10">
       {/* Title */}
       <motion.h1
         initial={{ opacity: 0, y: -50 }}
@@ -172,17 +179,11 @@ export default function PlayerCountSlider() {
             transition={{ delay: 0.6, duration: 0.4, ease: 'easeOut' }}
             whileHover={{ scale: 1.1, boxShadow: '0 0 30px var(--glow-secondary)' }}
             whileTap={{ scale: 0.95 }}
-            onMouseDown={() => handleMouseDown('decrement')}
-            onMouseUp={handleMouseUp}
+            onMouseDown={() => handlePressStart('decrement')}
+            onMouseUp={() => handlePressEnd('decrement')}
             onMouseLeave={handleMouseLeave}
             onTouchStart={(e) => handleTouchStart('decrement', e)}
-            onTouchEnd={handleTouchEnd}
-            onClick={() => {
-              // Single click is handled by onMouseDown, but we keep this for accessibility
-              if (!isHolding) {
-                setPlayerCountState(Math.max(2, playerCount - 1));
-              }
-            }}
+            onTouchEnd={(e) => handleTouchEnd('decrement', e)}
             disabled={playerCount <= 2}
             className={`
               w-16 h-16 md:w-20 md:h-20 rounded-full
@@ -231,17 +232,11 @@ export default function PlayerCountSlider() {
             transition={{ delay: 0.6, duration: 0.4, ease: 'easeOut' }}
             whileHover={{ scale: 1.1, boxShadow: '0 0 30px var(--glow-secondary)' }}
             whileTap={{ scale: 0.95 }}
-            onMouseDown={() => handleMouseDown('increment')}
-            onMouseUp={handleMouseUp}
+            onMouseDown={() => handlePressStart('increment')}
+            onMouseUp={() => handlePressEnd('increment')}
             onMouseLeave={handleMouseLeave}
             onTouchStart={(e) => handleTouchStart('increment', e)}
-            onTouchEnd={handleTouchEnd}
-            onClick={() => {
-              // Single click is handled by onMouseDown, but we keep this for accessibility
-              if (!isHolding) {
-                setPlayerCountState(Math.min(20, playerCount + 1));
-              }
-            }}
+            onTouchEnd={(e) => handleTouchEnd('increment', e)}
             disabled={playerCount >= 20}
             className={`
               w-16 h-16 md:w-20 md:h-20 rounded-full

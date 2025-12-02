@@ -54,11 +54,6 @@ export default function AdminDashboard() {
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }
@@ -229,7 +224,7 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0} minHeight={200}>
                   {chartFilter === '12months' ? (
                     <BarChart data={stats.monthlyUserStats}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#8b5cf6" opacity={0.2} />
@@ -327,38 +322,88 @@ export default function AdminDashboard() {
                 transition={{ delay: 0.7 }}
                 className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 border border-accent/20"
               >
-                <h3 className="text-lg md:text-xl font-bold glow-text mb-4">توزیع کاربران بر اساس نقش</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={stats.usersByRole}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry: any) => {
-                        const { role, count } = entry.payload || entry;
-                        const percent = entry.percent || 0;
-                        return `${role === 'admin' ? 'مدیر' : 'کاربر'}: ${count} (${(percent * 100).toFixed(0)}%)`;
-                      }}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {stats.usersByRole.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)', 
-                        border: '1px solid #8b5cf6',
-                        borderRadius: '8px',
-                        color: '#fff'
-                      }}
-                      formatter={(value: number, name: string) => [value, name === 'admin' ? 'مدیر' : 'کاربر']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <h3 className="text-lg md:text-xl font-bold glow-text mb-4">
+                  توزیع کاربران بر اساس نقش
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+                      <PieChart>
+                        <Pie
+                          data={stats.usersByRole}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="count"
+                        >
+                          {stats.usersByRole.map((entry, index) => (
+                            <Cell
+                              key={`cell-role-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            border: '1px solid #8b5cf6',
+                            borderRadius: '8px',
+                            color: '#fff',
+                          }}
+                          formatter={(value: number, name: string, props: any) => {
+                            const role = (props?.payload?.role as string) || name;
+                            const label = role === 'admin' ? 'مدیر' : 'کاربر';
+                            return [value, label];
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* لیست نقش‌ها به صورت تفکیکی */}
+                  <div className="space-y-2 text-sm md:text-base">
+                    {(() => {
+                      const total = stats.usersByRole.reduce(
+                        (sum, item) => sum + item.count,
+                        0
+                      );
+                      return stats.usersByRole.map((item, index) => {
+                        const percent =
+                          total > 0 ? Math.round((item.count / total) * 100) : 0;
+                        const label = item.role === 'admin' ? 'مدیر' : 'کاربر';
+                        return (
+                          <div
+                            key={item.role || index}
+                            className="flex items-center justify-between bg-bg-tertiary/60 border border-accent/20 rounded-lg px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    COLORS[index % COLORS.length],
+                                }}
+                              />
+                              <span className="text-text-primary font-medium">
+                                {label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-text-secondary">
+                                {item.count} نفر
+                              </span>
+                              <span className="text-accent font-semibold">
+                                %{percent}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
               </motion.div>
 
               {/* نمودار توزیع بازی‌ها بر اساس دسته‌بندی */}
@@ -368,37 +413,84 @@ export default function AdminDashboard() {
                 transition={{ delay: 0.8 }}
                 className="bg-bg-secondary/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 border border-accent/20"
               >
-                <h3 className="text-lg md:text-xl font-bold glow-text mb-4">توزیع بازی‌ها بر اساس دسته‌بندی</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={stats.gamesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry: any) => {
-                        const { category, count } = entry.payload || entry;
-                        const percent = entry.percent || 0;
-                        return `${category}: ${count} (${(percent * 100).toFixed(0)}%)`;
-                      }}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {stats.gamesByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)', 
-                        border: '1px solid #8b5cf6',
-                        borderRadius: '8px',
-                        color: '#fff'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <h3 className="text-lg md:text-xl font-bold glow-text mb-4">
+                  توزیع بازی‌ها بر اساس دسته‌بندی
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+                      <PieChart>
+                        <Pie
+                          data={stats.gamesByCategory}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          // برچسب داخل نمودار را حذف می‌کنیم تا شلوغ نشود
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="count"
+                        >
+                          {stats.gamesByCategory.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            border: '1px solid #8b5cf6',
+                            borderRadius: '8px',
+                            color: '#fff',
+                          }}
+                          formatter={(value: number) => [value, 'تعداد بازی‌ها']}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* لیست دسته‌بندی‌ها به صورت تفکیکی زیر/کنار نمودار */}
+                  <div className="space-y-2 text-sm md:text-base">
+                    {(() => {
+                      const total = stats.gamesByCategory.reduce(
+                        (sum, item) => sum + item.count,
+                        0
+                      );
+                      return stats.gamesByCategory.map((item, index) => {
+                        const percent =
+                          total > 0 ? Math.round((item.count / total) * 100) : 0;
+                        return (
+                          <div
+                            key={item.category || index}
+                            className="flex items-center justify-between bg-bg-tertiary/60 border border-accent/20 rounded-lg px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    COLORS[index % COLORS.length],
+                                }}
+                              />
+                              <span className="text-text-primary font-medium">
+                                {item.category || 'بدون دسته‌بندی'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-text-secondary">
+                                {item.count} بازی
+                              </span>
+                              <span className="text-accent font-semibold">
+                                %{percent}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
               </motion.div>
             </div>
 

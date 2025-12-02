@@ -13,6 +13,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 export default function AdminSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true); // پیش‌فرض true برای SSR
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const pathname = usePathname();
   const { logout } = useAuthStore();
   const { language, isRTL } = useLanguageStore();
@@ -79,6 +80,21 @@ export default function AdminSidebar() {
     },
   ];
 
+  const settingsSubmenus = [
+    {
+      href: '/admin/dashboard/settings/categories',
+      label: t.categories,
+    },
+    {
+      href: '/admin/dashboard/settings/difficulty-levels',
+      label: t.difficultyLevels,
+    },
+    {
+      href: '/admin/dashboard/settings/required-items',
+      label: t.requiredItems,
+    },
+  ];
+
   const handleLogout = async () => {
     await logout();
     router.push('/login');
@@ -123,6 +139,77 @@ export default function AdminSidebar() {
             </Link>
           );
         })}
+
+        {/* Settings Menu with Submenus */}
+        <div>
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: menuItems.length * 0.1 }}
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              isSettingsOpen
+                ? `bg-accent/20 text-accent ${isRTL ? 'border-r-2' : 'border-l-2'} border-accent`
+                : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="font-medium">{t.settings}</span>
+            </div>
+            <motion.svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              animate={{ rotate: isSettingsOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </motion.svg>
+          </motion.button>
+
+          <AnimatePresence>
+            {isSettingsOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className={`mt-2 space-y-1 ${isRTL ? 'pr-4' : 'pl-4'}`}>
+                  {settingsSubmenus.map((submenu, index) => {
+                    const isActive = pathname === submenu.href;
+                    return (
+                      <Link
+                        key={submenu.href}
+                        href={submenu.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm ${
+                            isActive
+                              ? 'bg-accent/10 text-accent font-medium'
+                              : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'
+                          }`}
+                        >
+                          {submenu.label}
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </nav>
 
       <motion.button

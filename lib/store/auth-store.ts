@@ -11,6 +11,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasChecked: boolean;
   login: (phone: string, code: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      hasChecked: false,
 
       login: async (phone: string, code: string) => {
         try {
@@ -81,7 +83,14 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
+        const { hasChecked } = get();
+        // اگر قبلاً وضعیت احراز هویت چک شده، دوباره درخواست نزن
+        if (hasChecked) {
+          return;
+        }
+
         try {
+          set({ isLoading: true });
           const response = await fetch('/api/auth/me');
           const data = await response.json();
 
@@ -90,12 +99,14 @@ export const useAuthStore = create<AuthState>()(
               user: data.user,
               isAuthenticated: true,
               isLoading: false,
+              hasChecked: true,
             });
           } else {
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
+              hasChecked: true,
             });
           }
         } catch (error) {
@@ -104,6 +115,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            hasChecked: true,
           });
         }
       },

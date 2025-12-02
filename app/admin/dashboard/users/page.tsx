@@ -30,11 +30,6 @@ export default function UsersPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }

@@ -82,14 +82,16 @@ export async function PUT(request: NextRequest) {
       category: z.string().optional(),
       rules: z.string().optional(),
       tips: z.string().optional(),
-      difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
+      difficultyLevelId: z.string().optional(),
       duration: z.number().int().positive().optional(),
       materials: z.string().optional(),
       isActive: z.boolean().optional(),
+      categoryIds: z.array(z.string()).optional(),
+      requiredItemIds: z.array(z.string()).optional(),
     });
 
     const data = updateSchema.parse(body);
-    const { id, ...updateData } = data;
+    const { id, categoryIds, requiredItemIds, difficultyLevelId, ...updateData } = data;
     
     console.log('Update data:', { id, updateData });
 
@@ -104,6 +106,11 @@ export async function PUT(request: NextRequest) {
     // بررسی وجود بازی قبل از به‌روزرسانی
     const existingGame = await prisma.game.findUnique({
       where: { id },
+      include: {
+        categories: true,
+        requiredItems: true,
+        difficultyLevel: true,
+      },
     });
 
     if (!existingGame) {
@@ -113,10 +120,45 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // اگر difficultyLevelId جدید ارسال شده، مقدار متنی difficulty را هم sync کن
+    if (difficultyLevelId) {
+      const level = await prisma.difficultyLevel.findUnique({
+        where: { id: difficultyLevelId },
+      });
+      if (level) {
+        (updateData as any).difficultyLevelId = level.id;
+        (updateData as any).difficulty = level.value;
+      }
+    }
+
     const game = await prisma.game.update({
       where: { id },
       data: updateData,
     });
+
+    // به‌روزرسانی دسته‌بندی‌ها (many-to-many)
+    if (categoryIds) {
+      await prisma.gameCategory.deleteMany({ where: { gameId: id } });
+      await prisma.gameCategory.createMany({
+        data: categoryIds.map((categoryId) => ({
+          gameId: id,
+          categoryId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // به‌روزرسانی موارد مورد نیاز (many-to-many)
+    if (requiredItemIds) {
+      await prisma.gameRequiredItem.deleteMany({ where: { gameId: id } });
+      await prisma.gameRequiredItem.createMany({
+        data: requiredItemIds.map((requiredItemId) => ({
+          gameId: id,
+          requiredItemId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -168,16 +210,63 @@ export async function POST(request: NextRequest) {
       category: z.string().min(1),
       rules: z.string().min(1),
       tips: z.string().optional(),
-      difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
+      difficultyLevelId: z.string().optional(),
       duration: z.number().int().positive(),
       materials: z.string().optional(),
+      categoryIds: z.array(z.string()).optional(),
+      requiredItemIds: z.array(z.string()).optional(),
     });
 
     const data = createSchema.parse(body);
 
+    let difficultyValue: 'easy' | 'medium' | 'hard' = 'medium';
+    if (data.difficultyLevelId) {
+      const level = await prisma.difficultyLevel.findUnique({
+        where: { id: data.difficultyLevelId },
+      });
+      if (level && (level.value === 'easy' || level.value === 'medium' || level.value === 'hard')) {
+        difficultyValue = level.value;
+      }
+    }
+
     const game = await prisma.game.create({
-      data,
+      data: {
+        name: data.name,
+        nameEn: data.nameEn,
+        description: data.description,
+        minPlayers: data.minPlayers,
+        maxPlayers: data.maxPlayers,
+        category: data.category,
+        rules: data.rules,
+        tips: data.tips,
+        difficulty: difficultyValue,
+        duration: data.duration,
+        materials: data.materials,
+        difficultyLevelId: data.difficultyLevelId,
+      },
     });
+
+    // ایجاد ارتباط دسته‌بندی‌ها
+    if (data.categoryIds && data.categoryIds.length > 0) {
+      await prisma.gameCategory.createMany({
+        data: data.categoryIds.map((categoryId) => ({
+          gameId: game.id,
+          categoryId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // ایجاد ارتباط موارد مورد نیاز
+    if (data.requiredItemIds && data.requiredItemIds.length > 0) {
+      await prisma.gameRequiredItem.createMany({
+        data: data.requiredItemIds.map((requiredItemId) => ({
+          gameId: game.id,
+          requiredItemId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     return NextResponse.json({
       success: true,

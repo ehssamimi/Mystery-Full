@@ -9,6 +9,8 @@ import { translations } from '@/lib/translations';
 import DeleteModal from '@/components/DeleteModal';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { Switch } from '@/components/ui/switch';
+import { Select, type SelectOption } from '@/components/ui/select';
+import AdminSearchInput from '@/components/AdminSearchInput';
 
 interface Game {
   id: string;
@@ -24,6 +26,26 @@ interface Game {
   duration: number;
   materials?: string;
   isActive: boolean;
+  difficultyLevelId?: string | null;
+}
+
+interface DifficultyLevelOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+  value: string;
+}
+
+interface CategoryOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+}
+
+interface RequiredItemOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
 }
 
 export default function GamesPage() {
@@ -42,11 +64,96 @@ export default function GamesPage() {
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
   const [togglingActive, setTogglingActive] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState<'players' | 'category' | 'rating' | 'status' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [difficultyOptions, setDifficultyOptions] = useState<DifficultyLevelOption[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  const [requiredItemOptions, setRequiredItemOptions] = useState<RequiredItemOption[]>([]);
+
+  // Helper برای ساخت گزینه‌های استاندارد react-select
+  const categorySelectOptions: SelectOption[] = categoryOptions.map((cat) => ({
+    value: cat.id,
+    label: language === 'fa' ? cat.nameFa : cat.nameEn,
+  }));
+
+  const requiredItemSelectOptions: SelectOption[] = requiredItemOptions.map((item) => ({
+    value: item.id,
+    label: language === 'fa' ? item.nameFa : item.nameEn,
+  }));
+
+  function CategoryMultiSelectField({
+    name,
+    initialCategoryName,
+  }: {
+    name: string;
+    initialCategoryName?: string;
+  }) {
+    const [selected, setSelected] = useState<SelectOption[]>(() => {
+      if (!initialCategoryName) return [];
+      const match = categorySelectOptions.find((o) => o.label === initialCategoryName);
+      return match ? [match] : [];
+    });
+
+    return (
+      <>
+        <Select
+          isMulti
+          options={categorySelectOptions}
+          value={selected}
+          onChange={(value) => {
+            setSelected((value || []) as SelectOption[]);
+          }}
+          placeholder={language === 'fa' ? 'انتخاب دسته‌بندی...' : 'Select categories...'}
+        />
+        {selected.map((opt) => (
+          <input key={opt.value} type="hidden" name={name} value={opt.value} />
+        ))}
+      </>
+    );
+  }
+
+  function RequiredItemsMultiSelectField({
+    name,
+    initialMaterials,
+  }: {
+    name: string;
+    initialMaterials?: string;
+  }) {
+    const [selected, setSelected] = useState<SelectOption[]>(() => {
+      if (!initialMaterials) return [];
+      const parts = initialMaterials
+        .split(/،|,/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+
+      const matches: SelectOption[] = [];
+      for (const part of parts) {
+        const match = requiredItemSelectOptions.find((o) => o.label === part);
+        if (match && !matches.find((m) => m.value === match.value)) {
+          matches.push(match);
+        }
+      }
+      return matches;
+    });
+
+    return (
+      <>
+        <Select
+          isMulti
+          options={requiredItemSelectOptions}
+          value={selected}
+          onChange={(value) => {
+            setSelected((value || []) as SelectOption[]);
+          }}
+          placeholder={language === 'fa' ? 'انتخاب موارد مورد نیاز...' : 'Select materials...'}
+        />
+        {selected.map((opt) => (
+          <input key={opt.value} type="hidden" name={name} value={opt.value} />
+        ))}
+      </>
+    );
+  }
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
@@ -57,6 +164,7 @@ export default function GamesPage() {
   useEffect(() => {
     if (isAuthenticated && user?.role === 'admin') {
       fetchGames();
+      fetchSettingsOptions();
     }
   }, [isAuthenticated, user]);
 
@@ -75,6 +183,26 @@ export default function GamesPage() {
     }
   };
 
+  const fetchSettingsOptions = async () => {
+    try {
+      const [dRes, cRes, rRes] = await Promise.all([
+        fetch('/api/admin/settings/difficulty-levels'),
+        fetch('/api/admin/settings/categories'),
+        fetch('/api/admin/settings/required-items'),
+      ]);
+
+      const dData = await dRes.json();
+      const cData = await cRes.json();
+      const rData = await rRes.json();
+
+      if (dData.success) setDifficultyOptions(dData.items);
+      if (cData.success) setCategoryOptions(cData.items);
+      if (rData.success) setRequiredItemOptions(rData.items);
+    } catch (error) {
+      console.error('Error fetching settings options:', error);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
@@ -90,9 +218,11 @@ export default function GamesPage() {
         category: formData.get('category') as string,
         rules: formData.get('rules') as string,
         tips: formData.get('tips') as string || undefined,
-        difficulty: formData.get('difficulty') as string,
+        difficultyLevelId: formData.get('difficultyLevelId') as string || undefined,
         duration: parseInt(formData.get('duration') as string),
         materials: formData.get('materials') as string || undefined,
+        categoryIds: formData.getAll('categoryIds') as string[],
+        requiredItemIds: formData.getAll('requiredItemIds') as string[],
       };
 
       const response = await fetch('/api/admin/games', {
@@ -148,17 +278,30 @@ export default function GamesPage() {
       if (formData.get('category')) updateData.category = formData.get('category') as string;
       if (formData.get('rules')) updateData.rules = formData.get('rules') as string;
       if (formData.get('tips')) updateData.tips = formData.get('tips') as string;
-      if (formData.get('difficulty'))
-        updateData.difficulty = formData.get('difficulty') as string;
+      const difficultyLevelId = formData.get('difficultyLevelId') as string | null;
       if (formData.get('duration'))
         updateData.duration = parseInt(formData.get('duration') as string);
       if (formData.get('materials'))
         updateData.materials = formData.get('materials') as string;
 
+      const payload: any = {
+        id: editingGame.id,
+        ...updateData,
+      };
+
+      if (difficultyLevelId) {
+        payload.difficultyLevelId = difficultyLevelId;
+      }
+
+      const categoryIds = formData.getAll('categoryIds') as string[];
+      const requiredItemIds = formData.getAll('requiredItemIds') as string[];
+      if (categoryIds.length > 0) payload.categoryIds = categoryIds;
+      if (requiredItemIds.length > 0) payload.requiredItemIds = requiredItemIds;
+
       const response = await fetch('/api/admin/games', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingGame.id, ...updateData }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -278,6 +421,57 @@ export default function GamesPage() {
     );
   });
 
+  const sortedGames = [...filteredGames].sort((a, b) => {
+    if (!sortKey) return 0;
+
+    const dir = sortDirection === 'asc' ? 1 : -1;
+
+    if (sortKey === 'players') {
+      const aVal = a.minPlayers;
+      const bVal = b.minPlayers;
+      if (aVal === bVal) {
+        return (a.maxPlayers - b.maxPlayers) * dir;
+      }
+      return (aVal - bVal) * dir;
+    }
+
+    if (sortKey === 'category') {
+      const aVal = (a.category || '').toLowerCase();
+      const bVal = (b.category || '').toLowerCase();
+      if (aVal === bVal) return 0;
+      return aVal > bVal ? dir : -dir;
+    }
+
+    if (sortKey === 'rating') {
+      const aScore = (a as any).score as number | undefined;
+      const bScore = (b as any).score as number | undefined;
+      const aVal = typeof aScore === 'number' ? aScore : 0;
+      const bVal = typeof bScore === 'number' ? bScore : 0;
+      if (aVal === bVal) return 0;
+      return (aVal - bVal) * dir;
+    }
+
+    if (sortKey === 'status') {
+      const aVal = a.isActive ? 1 : 0;
+      const bVal = b.isActive ? 1 : 0;
+      if (aVal === bVal) return 0;
+      return (aVal - bVal) * dir;
+    }
+
+    return 0;
+  });
+
+  const handleSort = (key: 'players' | 'category' | 'rating' | 'status') => {
+    if (sortKey === key) {
+      // اگر روی همان ستون دوباره کلیک شد، جهت را برعکس کن
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      // ستون جدید → از صعودی شروع کن
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -383,12 +577,9 @@ export default function GamesPage() {
             <label className="block text-sm font-medium mb-2 text-text-secondary">
               {t.category} *
             </label>
-            <input
-              type="text"
-              name="category"
-              defaultValue={game?.category || ''}
-              className="w-full px-4 py-2 bg-bg-tertiary border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent"
-              required
+            <CategoryMultiSelectField
+              name="categoryIds"
+              initialCategoryName={game?.category}
             />
           </div>
           <div>
@@ -396,14 +587,17 @@ export default function GamesPage() {
               {t.difficulty} *
             </label>
             <select
-              name="difficulty"
-              defaultValue={game?.difficulty || 'medium'}
+              name="difficultyLevelId"
+              defaultValue={game?.difficultyLevelId ?? ''}
               className="w-full px-4 py-2 bg-bg-tertiary border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent"
               required
             >
-              <option value="easy">{t.easy}</option>
-              <option value="medium">{t.medium}</option>
-              <option value="hard">{t.hard}</option>
+              <option value="">{language === 'fa' ? 'انتخاب کنید...' : 'Select...'}</option>
+              {difficultyOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {language === 'fa' ? opt.nameFa : opt.nameEn}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -437,11 +631,9 @@ export default function GamesPage() {
           <label className="block text-sm font-medium mb-2 text-text-secondary">
             {t.materials}
           </label>
-          <input
-            type="text"
-            name="materials"
-            defaultValue={game?.materials || ''}
-            className="w-full px-4 py-2 bg-bg-tertiary border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent"
+          <RequiredItemsMultiSelectField
+            name="requiredItemIds"
+            initialMaterials={game?.materials}
           />
         </div>
 
@@ -632,7 +824,7 @@ export default function GamesPage() {
                             ) : (
                               <Switch
                                 checked={game.isActive}
-                                onChange={(checked) => handleToggleActive(game, checked)}
+                                onCheckedChange={(checked: boolean) => handleToggleActive(game, checked)}
                                 disabled={togglingActive === game.id}
                               />
                             )}
@@ -684,21 +876,62 @@ export default function GamesPage() {
                       <thead>
                         <tr className="border-b border-accent/20">
                           <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'نام' : 'Name'}</th>
-                          <th className="text-right p-4 text-text-secondary">{t.players}</th>
-                          <th className="text-right p-4 text-text-secondary">{t.category}</th>
-                          <th className="text-right p-4 text-text-secondary">{language === 'fa' ? 'وضعیت' : 'Status'}</th>
+                          <th
+                            className="text-right p-4 text-text-secondary cursor-pointer select-none"
+                            onClick={() => handleSort('players')}
+                          >
+                            {t.players}
+                            {sortKey === 'players' && (
+                              <span className="mr-1 text-xs">
+                                {sortDirection === 'asc' ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </th>
+                          <th
+                            className="text-right p-4 text-text-secondary cursor-pointer select-none"
+                            onClick={() => handleSort('category')}
+                          >
+                            {t.category}
+                            {sortKey === 'category' && (
+                              <span className="mr-1 text-xs">
+                                {sortDirection === 'asc' ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </th>
+                          <th
+                            className="text-right p-4 text-text-secondary cursor-pointer select-none"
+                            onClick={() => handleSort('rating')}
+                          >
+                            {language === 'fa' ? 'امتیاز' : 'Rating'}
+                            {sortKey === 'rating' && (
+                              <span className="mr-1 text-xs">
+                                {sortDirection === 'asc' ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </th>
+                          <th
+                            className="text-right p-4 text-text-secondary cursor-pointer select-none"
+                            onClick={() => handleSort('status')}
+                          >
+                            {language === 'fa' ? 'وضعیت' : 'Status'}
+                            {sortKey === 'status' && (
+                              <span className="mr-1 text-xs">
+                                {sortDirection === 'asc' ? '▲' : '▼'}
+                              </span>
+                            )}
+                          </th>
                           <th className="text-right p-4 text-text-secondary">{t.actions}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredGames.length === 0 ? (
+                        {sortedGames.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="p-8 text-center text-text-secondary">
+                            <td colSpan={6} className="p-8 text-center text-text-secondary">
                               {searchQuery ? (language === 'fa' ? 'نتیجه‌ای یافت نشد' : 'No results found') : t.noGames}
                             </td>
                           </tr>
                         ) : (
-                          filteredGames.map((game, index) => (
+                          sortedGames.map((game, index) => (
                             <motion.tr
                               key={game.id}
                               initial={{ opacity: 0, y: 10 }}
@@ -717,48 +950,55 @@ export default function GamesPage() {
                               </td>
                               <td className="p-4">{game.category}</td>
                               <td className="p-4">
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    game.isActive
-                                      ? 'bg-green-500/20 text-green-300'
-                                      : 'bg-red-500/20 text-red-300'
-                                  }`}
-                                >
-                                  {game.isActive ? t.active : t.inactive}
-                                </span>
+                                {typeof (game as any).score === 'number' ? (
+                                  <span className="font-semibold text-lg">
+                                    {Math.round((game as any).score)}
+                                    {typeof (game as any).ratingsCount === 'number' && (
+                                      <span className="text-sm text-text-secondary ml-1">
+                                        ({(game as any).ratingsCount})
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-text-secondary">
+                                    {language === 'fa' ? 'بدون امتیاز' : 'No rating'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4">
+                                {togglingActive === game.id ? (
+                                  <div className="flex items-center justify-center h-6 w-11">
+                                    <svg
+                                      className="animate-spin h-4 w-4 text-accent"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                      ></circle>
+                                      <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                      ></path>
+                                    </svg>
+                                  </div>
+                                ) : (
+                                  <Switch
+                                    checked={game.isActive}
+                                    onCheckedChange={(checked: boolean) => handleToggleActive(game, checked)}
+                                    disabled={togglingActive === game.id}
+                                  />
+                                )}
                               </td>
                               <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                  {togglingActive === game.id ? (
-                                    <div className="flex items-center justify-center h-6 w-11">
-                                      <svg
-                                        className="animate-spin h-4 w-4 text-accent"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <circle
-                                          className="opacity-25"
-                                          cx="12"
-                                          cy="12"
-                                          r="10"
-                                          stroke="currentColor"
-                                          strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                          className="opacity-75"
-                                          fill="currentColor"
-                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                      </svg>
-                                    </div>
-                                  ) : (
-                                    <Switch
-                                      checked={game.isActive}
-                                      onChange={(checked) => handleToggleActive(game, checked)}
-                                      disabled={togglingActive === game.id}
-                                    />
-                                  )}
                                   <div className="flex gap-2">
                                     <motion.button
                                       onClick={() => setEditingGame(game)}

@@ -32,10 +32,6 @@ export default function GamesPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }

@@ -24,10 +24,6 @@ export default function UsersPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }
