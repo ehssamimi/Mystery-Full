@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import * as XLSX from 'xlsx';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
@@ -66,6 +67,12 @@ export default function GamesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<'players' | 'category' | 'rating' | 'status' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState<string | null>(null);
+  const [importPreviewCount, setImportPreviewCount] = useState<number | null>(null);
+  const [importRows, setImportRows] = useState<any[] | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [difficultyOptions, setDifficultyOptions] = useState<DifficultyLevelOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
@@ -194,6 +201,126 @@ export default function GamesPage() {
       console.error('Error fetching games:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) {
+        params.set('search', searchQuery.trim());
+      }
+
+      const res = await fetch(`/api/admin/games/export?${params.toString()}`, {
+        method: 'GET',
+      });
+
+      if (!res.ok) {
+        addNotification({
+          type: 'error',
+          message: language === 'fa' ? 'خطا در Export بازی‌ها' : 'Failed to export games',
+        });
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `games-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      addNotification({
+        type: 'error',
+        message: language === 'fa' ? 'خطا در Export بازی‌ها' : 'Failed to export games',
+      });
+    }
+  };
+
+  const handleImportFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      setImportFileName(file.name);
+      setImportPreviewCount(jsonRows.length);
+      setImportRows(jsonRows as any[]);
+    } catch (error) {
+      console.error('Import parse error:', error);
+      addNotification({
+        type: 'error',
+        message: language === 'fa' ? 'خطا در خواندن فایل Excel' : 'Failed to read Excel file',
+      });
+      setImportFileName(null);
+      setImportPreviewCount(null);
+      setImportRows(null);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importRows || importRows.length === 0) {
+      addNotification({
+        type: 'error',
+        message: language === 'fa' ? 'فایل خالی است' : 'File is empty',
+      });
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const res = await fetch('/api/admin/games/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: importRows }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        addNotification({
+          type: 'error',
+          message: data.error || (language === 'fa' ? 'خطا در Import بازی‌ها' : 'Failed to import games'),
+        });
+        return;
+      }
+
+      const created = data.created ?? 0;
+      const updated = data.updated ?? 0;
+      const skipped = data.skipped ?? 0;
+
+      addNotification({
+        type: 'success',
+        message:
+          language === 'fa'
+            ? `Import انجام شد. ایجاد: ${created}، به‌روزرسانی: ${updated}، رد شده: ${skipped}`
+            : `Import completed. Created: ${created}, Updated: ${updated}, Skipped: ${skipped}`,
+      });
+
+      setIsImportModalOpen(false);
+      setImportFileName(null);
+      setImportPreviewCount(null);
+      setImportRows(null);
+
+      await fetchGames();
+    } catch (error) {
+      console.error('Import request error:', error);
+      addNotification({
+        type: 'error',
+        message: language === 'fa' ? 'خطا در Import بازی‌ها' : 'Failed to import games',
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -717,86 +844,119 @@ export default function GamesPage() {
             {editingGame && renderGameForm(editingGame, false)}
             {!editingGame && !creatingGame && (
               <>
-                {/* Search Input */}
+                {/* Search + Import/Export */}
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 md:mb-6"
+                  className="mb-4 md:mb-6 flex flex-col md:flex-row gap-3 md:gap-4 md:items-center"
                 >
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={language === 'fa' ? 'جستجو بر اساس نام (فارسی یا انگلیسی)...' : 'Search by name (Persian or English)...'}
-                      dir={isRTL ? 'rtl' : 'ltr'}
-                      style={{
-                        paddingTop: '0.75rem',
-                        paddingBottom: '0.75rem',
-                        ...(isRTL
-                          ? searchQuery
-                            ? { paddingRight: '1rem', paddingLeft: '3rem' }
-                            : { paddingRight: '47px', paddingLeft: '1rem' }
-                          : searchQuery
+                  <div className="flex-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={
+                          language === 'fa'
+                            ? 'جستجو بر اساس نام (فارسی یا انگلیسی)...'
+                            : 'Search by name (Persian or English)...'
+                        }
+                        dir={isRTL ? 'rtl' : 'ltr'}
+                        style={{
+                          paddingTop: '0.75rem',
+                          paddingBottom: '0.75rem',
+                          ...(isRTL
+                            ? searchQuery
+                              ? { paddingRight: '1rem', paddingLeft: '3rem' }
+                              : { paddingRight: '47px', paddingLeft: '1rem' }
+                            : searchQuery
                             ? { paddingLeft: '1rem', paddingRight: '3rem' }
                             : { paddingLeft: '47px', paddingRight: '1rem' }),
+                        }}
+                        className="w-full bg-bg-secondary/80 backdrop-blur-sm border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200"
+                      />
+                      {!searchQuery && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`absolute top-1/2 transform -translate-y-1/2 ${
+                            isRTL ? 'right-4' : 'left-4'
+                          }`}
+                        >
+                          <svg
+                            className="w-5 h-5 text-text-secondary pointer-events-none"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                          </svg>
+                        </motion.div>
+                      )}
+                      {searchQuery && (
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          onClick={() => setSearchQuery('')}
+                          className={`absolute top-[35%] transform -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50 transition-all duration-200 ${
+                            isRTL ? 'left-3' : 'right-3'
+                          }`}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          aria-label={language === 'fa' ? 'پاک کردن' : 'Clear'}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 md:gap-3 justify-end">
+                    <motion.button
+                      type="button"
+                      onClick={handleExport}
+                      whileHover={{ scale: 1.03, y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm rounded-lg bg-bg-tertiary hover:bg-bg-tertiary/80 border border-accent/30 text-text-primary flex items-center gap-2 transition-all duration-200"
+                    >
+                      <span>⬇</span>
+                      <span>{language === 'fa' ? 'Export' : 'Export'}</span>
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        setIsImportModalOpen(true);
+                        setImportFileName(null);
+                        setImportPreviewCount(null);
+                        setImportRows(null);
                       }}
-                      className="w-full bg-bg-secondary/80 backdrop-blur-sm border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200"
-                    />
-                    {/* Search Icon - Only show when input is empty */}
-                    {!searchQuery && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`absolute top-1/2 transform -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'}`}
-                      >
-                        <svg
-                          className="w-5 h-5 text-text-secondary pointer-events-none"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
-                      </motion.div>
-                    )}
-                    {/* Clear Button - Positioned higher and centered */}
-                    {searchQuery && (
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        onClick={() => setSearchQuery('')}
-                        className={`absolute top-[35%] transform -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/50 transition-all duration-200 ${
-                          isRTL ? 'left-3' : 'right-3'
-                        }`}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label={language === 'fa' ? 'پاک کردن' : 'Clear'}
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </motion.button>
-                    )}
+                      whileHover={{ scale: 1.03, y: -1 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="px-3 py-2 md:px-4 md:py-2 text-xs md:text-sm rounded-lg bg-accent/20 hover:bg-accent/30 border border-accent/40 text-accent flex items-center gap-2 transition-all duration-200"
+                    >
+                      <span>⬆</span>
+                      <span>{language === 'fa' ? 'Import' : 'Import'}</span>
+                    </motion.button>
                   </div>
                 </motion.div>
 
@@ -1069,6 +1229,121 @@ export default function GamesPage() {
         cancelText={t.cancel}
         isLoading={deleting !== null}
       />
+
+      {/* Import Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => {
+              if (!isImporting) {
+                setIsImportModalOpen(false);
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-bg-secondary/95 backdrop-blur-md rounded-xl md:rounded-2xl border border-accent/30 shadow-2xl"
+            >
+              <div className="p-4 md:p-6 border-b border-accent/20 flex items-center justify-between">
+                <h2 className="text-lg md:text-xl font-bold glow-text">
+                  {language === 'fa' ? 'Import بازی‌ها' : 'Import Games'}
+                </h2>
+                <button
+                  onClick={() => {
+                    if (!isImporting) setIsImportModalOpen(false);
+                  }}
+                  className="text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 md:p-6 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-text-secondary">
+                    {language === 'fa'
+                      ? 'فایل Excel (خروجی گرفته‌شده از همین صفحه) را انتخاب کنید. رکوردها بر اساس ستون id به‌روزرسانی یا ایجاد می‌شوند.'
+                      : 'Select an Excel file exported from this page. Records will be updated or created based on the id column.'}
+                  </p>
+                  <label className="block">
+                    <span className="sr-only">Choose Excel file</span>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleImportFileChange}
+                      className="block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent/20 file:text-accent hover:file:bg-accent/30 cursor-pointer"
+                    />
+                  </label>
+                  {importFileName && (
+                    <div className="mt-2 text-sm text-text-secondary">
+                      <div>
+                        {language === 'fa' ? 'فایل انتخاب‌شده:' : 'Selected file:'}{' '}
+                        <span className="font-semibold text-text-primary">{importFileName}</span>
+                      </div>
+                      {importPreviewCount !== null && (
+                        <div>
+                          {language === 'fa'
+                            ? `تعداد ردیف‌ها: ${importPreviewCount}`
+                            : `Rows: ${importPreviewCount}`}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-red-300">
+                    {language === 'fa'
+                      ? 'هشدار: این عملیات می‌تواند اطلاعات بازی‌ها را بر اساس id جایگزین کند.'
+                      : 'Warning: This operation can replace game data based on id.'}
+                  </p>
+                  <p className="text-xs text-text-secondary">
+                    {language === 'fa'
+                      ? 'اگر برای یک id بازی وجود داشته باشد، تمام فیلدهایی که در فایل وجود دارند با مقادیر جدید جایگزین می‌شوند. اگر id جدید باشد، بازی جدیدی ایجاد می‌شود.'
+                      : 'If a game with a given id exists, all fields present in the file will be updated. If the id is new, a new game will be created.'}
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <motion.button
+                    type="button"
+                    disabled={isImporting}
+                    onClick={() => {
+                      if (!isImporting) setIsImportModalOpen(false);
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 md:px-6 py-2 text-sm md:text-base bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary font-semibold rounded-lg transition-all duration-200 border border-accent/20 disabled:opacity-50"
+                  >
+                    {t.cancel}
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    disabled={isImporting || !importRows || importRows.length === 0}
+                    onClick={handleConfirmImport}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 md:px-6 py-2 text-sm md:text-base bg-accent hover:bg-accent-glow text-white font-semibold rounded-lg transition-all duration-200 glow disabled:opacity-50"
+                  >
+                    {isImporting
+                      ? language === 'fa'
+                        ? 'در حال Import...'
+                        : 'Importing...'
+                      : language === 'fa'
+                      ? 'بله، Import کن'
+                      : 'Yes, import'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

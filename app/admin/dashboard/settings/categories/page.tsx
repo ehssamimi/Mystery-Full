@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DeleteModal from '@/components/DeleteModal';
+import AdminImportExport from '@/components/AdminImportExport';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useLanguageStore } from '@/lib/store/language-store';
@@ -195,16 +196,32 @@ export default function CategoriesSettingsPage() {
 
         {/* Search + Table List */}
         <div className="space-y-4">
-          <AdminSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={
-              language === 'fa'
-                ? 'جستجو بر اساس نام فارسی یا انگلیسی...'
-                : 'Search by Persian or English name...'
-            }
-            isRTL={isRTL}
-          />
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center"
+          >
+            <div className="flex-1">
+              <AdminSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={
+                  language === 'fa'
+                    ? 'جستجو بر اساس نام فارسی یا انگلیسی...'
+                    : 'Search by Persian or English name...'
+                }
+                isRTL={isRTL}
+              />
+            </div>
+            <AdminImportExport
+              type="category"
+              exportApiPath="/api/admin/settings/categories/export"
+              importApiPath="/api/admin/settings/categories/import"
+              searchQuery={searchQuery}
+              onRefresh={fetchItems}
+              language={language}
+            />
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
@@ -394,6 +411,7 @@ export default function CategoriesSettingsPage() {
         cancelText={t.cancel}
         isLoading={deletingId !== null}
       />
+
     </div>
   );
 }

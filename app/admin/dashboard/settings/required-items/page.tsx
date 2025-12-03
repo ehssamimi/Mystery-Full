@@ -8,6 +8,7 @@ import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import DeleteModal from '@/components/DeleteModal';
+import AdminImportExport from '@/components/AdminImportExport';
 import AdminSearchInput from '@/components/AdminSearchInput';
 
 interface RequiredItem {
@@ -193,16 +194,32 @@ export default function RequiredItemsSettingsPage() {
 
         {/* Search + Table List */}
         <div className="space-y-4">
-          <AdminSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={
-              language === 'fa'
-                ? 'جستجو بر اساس نام فارسی یا انگلیسی...'
-                : 'Search by Persian or English name...'
-            }
-            isRTL={isRTL}
-          />
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center"
+          >
+            <div className="flex-1">
+              <AdminSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={
+                  language === 'fa'
+                    ? 'جستجو بر اساس نام فارسی یا انگلیسی...'
+                    : 'Search by Persian or English name...'
+                }
+                isRTL={isRTL}
+              />
+            </div>
+            <AdminImportExport
+              type="requiredItem"
+              exportApiPath="/api/admin/settings/required-items/export"
+              importApiPath="/api/admin/settings/required-items/import"
+              searchQuery={searchQuery}
+              onRefresh={fetchItems}
+              language={language}
+            />
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
