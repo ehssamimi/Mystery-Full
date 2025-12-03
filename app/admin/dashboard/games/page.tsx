@@ -91,8 +91,22 @@ export default function GamesPage() {
   }) {
     const [selected, setSelected] = useState<SelectOption[]>(() => {
       if (!initialCategoryName) return [];
-      const match = categorySelectOptions.find((o) => o.label === initialCategoryName);
-      return match ? [match] : [];
+
+      // ممکن است category شامل چند دسته با جداکننده «،» یا «,» باشد
+      const parts = initialCategoryName
+        .split(/،|,/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+
+      const matches: SelectOption[] = [];
+      for (const part of parts) {
+        const match = categorySelectOptions.find((o) => o.label === part);
+        if (match && !matches.find((m) => m.value === match.value)) {
+          matches.push(match);
+        }
+      }
+
+      return matches;
     });
 
     return (
@@ -307,9 +321,15 @@ export default function GamesPage() {
       const data = await response.json();
 
       if (data.success) {
+        // ابتدا state محلی را با داده برگردانده‌شده از سرور به‌روزرسانی کن
         setGames((prev) =>
           prev.map((g) => (g.id === editingGame.id ? data.game : g))
         );
+
+        // برای اطمینان از همگام بودن UI با دیتابیس (به‌خصوص مقادیر محاسبه‌شده مثل category/materials)
+        // لیست بازی‌ها را دوباره از سرور می‌گیریم
+        await fetchGames();
+
         setEditingGame(null);
         addNotification({
           type: 'success',

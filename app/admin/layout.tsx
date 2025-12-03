@@ -12,7 +12,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, isLoading, hasChecked, checkAuth } = useAuthStore();
   const { isRTL } = useLanguageStore();
 
   useEffect(() => {
@@ -21,17 +21,25 @@ export default function AdminLayout({
   }, []);
 
   useEffect(() => {
+    // تا وقتی وضعیت احراز هویت مشخص نشده، redirect نکن
+    if (!hasChecked) return;
+
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, hasChecked, router]);
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  // تا قبل از اتمام checkAuth فقط لودر نشان بده، نه صفحه لاگین
+  if (isLoading || !hasChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl glow-text">در حال بارگذاری...</div>
       </div>
     );
+  }
+
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return null;
   }
 
   return (

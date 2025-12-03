@@ -71,7 +71,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     console.log('Update request body:', body);
-    
+
     const updateSchema = z.object({
       id: z.string(),
       name: z.string().optional(),
@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest) {
 
     const data = updateSchema.parse(body);
     const { id, categoryIds, requiredItemIds, difficultyLevelId, ...updateData } = data;
-    
+
     console.log('Update data:', { id, updateData });
 
     // بررسی اینکه آیا حداقل یک فیلد برای به‌روزرسانی وجود دارد
@@ -128,6 +128,31 @@ export async function PUT(request: NextRequest) {
       if (level) {
         (updateData as any).difficultyLevelId = level.id;
         (updateData as any).difficulty = level.value;
+      }
+    }
+
+    // اگر categoryIds ارسال شده، رشته category (نمایش سریع) را هم از روی تنظیمات دسته‌بندی sync کن
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (categories.length > 0) {
+        // نمایش: نام فارسی تمام دسته‌بندی‌ها به صورت یک رشته
+        (updateData as any).category = categories.map((c) => c.nameFa).join('، ');
+      }
+    }
+
+    // اگر requiredItemIds ارسال شده، رشته materials را هم sync کن تا در جاهای قدیمی درست نمایش داده شود
+    if (requiredItemIds && requiredItemIds.length > 0) {
+      const items = await prisma.requiredItem.findMany({
+        where: { id: { in: requiredItemIds } },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (items.length > 0) {
+        (updateData as any).materials = items.map((i) => i.nameFa).join('، ');
       }
     }
 
@@ -207,7 +232,8 @@ export async function POST(request: NextRequest) {
       description: z.string().min(1),
       minPlayers: z.number().int().positive(),
       maxPlayers: z.number().int().positive(),
-      category: z.string().min(1),
+      // در نسخه جدید، category به صورت خودکار از روی categoryIds پر می‌شود
+      category: z.string().min(1).optional(),
       rules: z.string().min(1),
       tips: z.string().optional(),
       difficultyLevelId: z.string().optional(),
@@ -219,6 +245,7 @@ export async function POST(request: NextRequest) {
 
     const data = createSchema.parse(body);
 
+    // مقدار difficulty متنی بر اساس difficultyLevelId
     let difficultyValue: 'easy' | 'medium' | 'hard' = 'medium';
     if (data.difficultyLevelId) {
       const level = await prisma.difficultyLevel.findUnique({
@@ -229,6 +256,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // اگر category خالی است، آن را از روی categoryIds و جدول Category پر کن
+    let displayCategory = data.category ?? '';
+    let materialsText = data.materials ?? '';
+
+    if ((!displayCategory || displayCategory.trim().length === 0) && data.categoryIds && data.categoryIds.length > 0) {
+      const categories = await prisma.category.findMany({
+        where: { id: { in: data.categoryIds } },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (categories.length > 0) {
+        displayCategory = categories.map((c) => c.nameFa).join('، ');
+      }
+    }
+
+    // اگر materials خالی است ولی requiredItemIds داریم، رشته متنی را از روی RequiredItem ها بساز
+    if ((!materialsText || materialsText.trim().length === 0) && data.requiredItemIds && data.requiredItemIds.length > 0) {
+      const items = await prisma.requiredItem.findMany({
+        where: { id: { in: data.requiredItemIds } },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (items.length > 0) {
+        materialsText = items.map((i) => i.nameFa).join('، ');
+      }
+    }
+
     const game = await prisma.game.create({
       data: {
         name: data.name,
@@ -236,12 +288,12 @@ export async function POST(request: NextRequest) {
         description: data.description,
         minPlayers: data.minPlayers,
         maxPlayers: data.maxPlayers,
-        category: data.category,
+        category: displayCategory || 'بدون دسته‌بندی',
         rules: data.rules,
         tips: data.tips,
         difficulty: difficultyValue,
         duration: data.duration,
-        materials: data.materials,
+        materials: materialsText || null,
         difficultyLevelId: data.difficultyLevelId,
       },
     });
