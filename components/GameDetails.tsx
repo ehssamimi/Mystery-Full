@@ -286,6 +286,15 @@ export default function GameDetails({ game, playerCount }: GameDetailsProps) {
           <motion.button
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => router.push(`/games/${game.id}/play?players=${playerCount}`)}
+            className="px-6 py-3 rounded-xl font-semibold transition-all bg-accent hover:bg-accent-glow text-white glow"
+          >
+            🎮 {t.playGame}
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => openRatingModal({ redirectAfter: true })}
             className="btn-primary"
           >

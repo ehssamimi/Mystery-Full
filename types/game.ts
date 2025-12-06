@@ -11,5 +11,6 @@ export interface Game {
   difficulty: 'easy' | 'medium' | 'hard';
   duration: number;
   materials?: string; // مواد مورد نیاز
+  isActive?: boolean; // فعال/غیرفعال بودن بازی
 }
 

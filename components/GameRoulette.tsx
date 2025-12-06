@@ -1,5 +1,38 @@
 'use client';
 
+/**
+ * کامپوننت چرخ بازی (GameRoulette)
+ * 
+ * این کامپوننت می‌تواند با دو حالت کار کند:
+ * 1. حالت بازی‌ها: لیست بازی‌ها را از props می‌گیرد و نمایش می‌دهد
+ * 2. حالت استاتیک: لیست استاتیک (مثلاً حروف الفبا) را نمایش می‌دهد
+ * 
+ * TODO: برای داینامیک کردن این کامپوننت:
+ * 
+ * 1. دریافت داده از API:
+ *    - می‌توانی یک API endpoint بسازی: /api/roulette-items
+ *    - در useEffect داده‌ها رو fetch کن و در state ذخیره کن
+ *    - مثال: const [items, setItems] = useState([]); useEffect(() => { fetch('/api/roulette-items').then(...) }, [])
+ * 
+ * 2. دریافت داده از Database:
+ *    - می‌توانی یک جدول در Prisma بسازی برای ذخیره آیتم‌های چرخ
+ *    - در API route داده‌ها رو از database بگیر و برگردون
+ *    - مثال: const items = await prisma.rouletteItem.findMany({ where: { isActive: true } })
+ * 
+ * 3. دریافت داده از Context/Store:
+ *    - می‌توانی از Zustand یا Context API استفاده کنی
+ *    - مثال: const items = useRouletteStore(state => state.items)
+ * 
+ * 4. دریافت داده از Props (Parent Component):
+ *    - می‌توانی داده‌ها رو از کامپوننت والد بگیر
+ *    - مثال: <GameRoulette staticItems={parentItems} />
+ * 
+ * 5. ذخیره انتخاب‌ها:
+ *    - می‌توانی انتخاب‌های کاربر رو در database ذخیره کنی
+ *    - در onItemSelected می‌توانی یک API call بزنی برای ذخیره
+ *    - مثال: await fetch('/api/selections', { method: 'POST', body: JSON.stringify({ item, userId }) })
+ */
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -10,13 +43,83 @@ import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 
 interface GameRouletteProps {
-  games: Game[];
-  playerCount: number;
+  games?: Game[];
+  playerCount?: number;
+  // لیست استاتیک (مثلاً حروف الفبا)
+  // TODO: برای داینامیک کردن، می‌توانی از API یا props دیگه داده بگیر:
+  // - از API: useEffect(() => { fetch('/api/items').then(...) }, [])
+  // - از props: staticItems={dynamicItemsFromParent}
+  // - از context/store: const items = useItemsStore()
+  staticItems?: string[];
+  // Callback برای وقتی که یک آیتم از لیست استاتیک انتخاب شد
+  onItemSelected?: (item: string) => void;
 }
 
-export default function GameRoulette({ games, playerCount }: GameRouletteProps) {
-  // Validate games prop - ensure it's always an array
-  const validGames = Array.isArray(games) ? games : [];
+// لیست حروف الفبای فارسی
+// TODO: برای داینامیک کردن این لیست:
+// 1. می‌توانی از API بگیر: const [alphabet, setAlphabet] = useState([]); useEffect(() => { fetch('/api/alphabet')... }, [])
+// 2. می‌توانی از database بگیر: const alphabet = await prisma.alphabet.findMany()
+// 3. می‌توانی از props بگیر: const PERSIAN_ALPHABET = props.alphabet || [...]
+// 4. می‌توانی از environment variables بگیر: process.env.ALPHABET?.split(',')
+const PERSIAN_ALPHABET = [
+  'الف', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه', 'ی'
+];
+
+export default function GameRoulette({ games = [], playerCount, staticItems, onItemSelected }: GameRouletteProps) {
+  // TODO: برای داینامیک کردن داده‌ها، می‌توانی از این الگو استفاده کنی:
+  // const [dynamicItems, setDynamicItems] = useState<string[]>([]);
+  // useEffect(() => {
+  //   const fetchItems = async () => {
+  //     try {
+  //       const response = await fetch('/api/items');
+  //       const data = await response.json();
+  //       setDynamicItems(data.items || []);
+  //     } catch (error) {
+  //       console.error('Error fetching items:', error);
+  //     }
+  //   };
+  //   fetchItems();
+  // }, []);
+  // سپس: const itemsToUse = staticItems || dynamicItems || PERSIAN_ALPHABET;
+  
+  // اگر لیست استاتیک داده شده، از اون استفاده کن
+  // اگر داده نشده، از حروف الفبا استفاده کن
+  const itemsToUse = staticItems && staticItems.length > 0 ? staticItems : PERSIAN_ALPHABET;
+  const isUsingStaticItems = !games || games.length === 0;
+  
+  // تبدیل لیست استاتیک به فرمت مشابه Game برای نمایش
+  // TODO: اگر داده‌ها از API می‌آید، می‌توانی مستقیماً فرمت Game رو برگردونی:
+  // const staticGames: Game[] = useMemo(() => {
+  //   if (!isUsingStaticItems) return [];
+  //   // اگر از API می‌آید و فرمت Game داره:
+  //   // return itemsToUse; // بدون تبدیل
+  //   // اگر string[] است:
+  //   return itemsToUse.map((item, index) => ({ ... }));
+  // }, [itemsToUse, isUsingStaticItems]);
+  const staticGames: Game[] = useMemo(() => {
+    if (!isUsingStaticItems) return [];
+    return itemsToUse.map((item, index) => ({
+      id: `static-${index}`,
+      name: item,
+      nameEn: item,
+      description: '',
+      minPlayers: 0,
+      maxPlayers: 0,
+      category: '',
+      rules: '',
+      difficulty: 'easy' as const,
+      duration: 0,
+    }));
+  }, [itemsToUse, isUsingStaticItems]);
+
+  // انتخاب لیست نهایی - فقط بازی‌های فعال را انتخاب کن
+  const validGames = useMemo(() => {
+    if (isUsingStaticItems) return staticGames;
+    if (!Array.isArray(games)) return [];
+    // فیلتر کردن فقط بازی‌های فعال (isActive === true)
+    // این اطمینان می‌دهد که فقط بازی‌های فعال برای کاربر انتخاب می‌شوند
+    return games.filter(game => game.isActive === true);
+  }, [games, isUsingStaticItems, staticGames]);
   
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isSpinning, setIsSpinning] = useState(true);
@@ -117,17 +220,72 @@ export default function GameRoulette({ games, playerCount }: GameRouletteProps) 
         // Show details after explosion
         setTimeout(() => {
           setShowDetails(true);
-          setTimeout(() => {
-            router.push(`/games/${randomGame.id}?players=${playerCount}`);
-          }, 500);
+          
+          // اگر از لیست استاتیک استفاده می‌کنیم
+          if (isUsingStaticItems && onItemSelected) {
+            // TODO: برای ذخیره داده‌های انتخاب شده در database یا API:
+            // const saveSelection = async () => {
+            //   try {
+            //     await fetch('/api/selections', {
+            //       method: 'POST',
+            //       headers: { 'Content-Type': 'application/json' },
+            //       body: JSON.stringify({ 
+            //         item: randomGame.name,
+            //         timestamp: new Date(),
+            //         userId: user?.id 
+            //       })
+            //     });
+            //   } catch (error) {
+            //     console.error('Error saving selection:', error);
+            //   }
+            // };
+            // saveSelection();
+            onItemSelected(randomGame.name);
+          } else if (playerCount) {
+            // اگر بازی انتخاب شده، به صفحه بازی برو
+            setTimeout(() => {
+              router.push(`/games/${randomGame.id}?players=${playerCount}`);
+            }, 500);
+          }
         }, 1000);
       }, 1200); // Wait for box to reach center (1.2s transition)
     }, spinDuration);
 
     return () => clearTimeout(spinTimer);
-  }, [finalDisplayGames, playerCount, router, playExplosion]);
+  }, [finalDisplayGames, playerCount, router, playExplosion, isUsingStaticItems, onItemSelected]);
 
   if (showDetails && selectedGame) {
+    // اگر از لیست استاتیک استفاده می‌کنیم و callback داده شده، فقط نمایش بده
+    if (isUsingStaticItems && onItemSelected) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="min-h-screen flex items-center justify-center p-4"
+        >
+          <div className="text-center">
+            <motion.h2
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-4xl md:text-6xl font-bold glow-text mb-4"
+            >
+              {selectedGame.name}
+            </motion.h2>
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-text-secondary"
+            >
+              {t.selectedForYou}
+            </motion.p>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    // اگر بازی انتخاب شده، به صفحه بازی برو (مثل قبل)
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -298,6 +456,13 @@ export default function GameRoulette({ games, playerCount }: GameRouletteProps) 
                     <div className="absolute bottom-2 right-2 w-2 h-2 bg-accent-glow rounded-full glow-sm" />
                   </motion.div>
                 )}
+                
+                {/* نمایش متن در وسط باکس */}
+                <div className="relative z-10 text-center px-2">
+                  <span className="text-2xl md:text-3xl font-bold text-text-primary">
+                    {game.name}
+                  </span>
+                </div>
               </motion.div>
             );
           })}

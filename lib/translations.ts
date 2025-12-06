@@ -121,6 +121,7 @@ export const translations = {
     rateGame: 'امتیاز به بازی',
     yourRating: 'امتیاز شما',
     favoriteGame: 'بازی مورد علاقه',
+    playGame: 'بازی کن',
     
     // Game Roulette
     selecting: 'در حال انتخاب...',
@@ -264,6 +265,7 @@ export const translations = {
     rateGame: 'Rate this game',
     yourRating: 'Your rating',
     favoriteGame: 'Favorite game',
+    playGame: 'Play Game',
     
     // Game Roulette
     selecting: 'Selecting...',
