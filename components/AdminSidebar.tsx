@@ -93,6 +93,14 @@ export default function AdminSidebar() {
       href: '/admin/dashboard/settings/required-items',
       label: t.requiredItems,
     },
+    {
+      href: '/admin/dashboard/settings/game-types',
+      label: t.gameTypes,
+    },
+    {
+      href: '/admin/dashboard/settings/datasets',
+      label: t.datasets,
+    },
   ];
 
   const handleLogout = async () => {

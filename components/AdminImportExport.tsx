@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import { useNotificationStore } from '@/lib/store/notification-store';
 
+// Keep for backward compatibility
 export type SettingsType = 'category' | 'requiredItem' | 'difficultyLevel';
 
 interface AdminImportExportProps {
-  type: SettingsType;
+  type: string;                 // Generic string type (can be any string)
   exportApiPath: string;
   importApiPath: string;
   searchQuery: string;
@@ -16,10 +17,21 @@ interface AdminImportExportProps {
   language: 'fa' | 'en';
 }
 
-const typeLabels: Record<SettingsType, { fa: string; en: string }> = {
+// Default type labels for known types
+const defaultTypeLabels: Record<string, { fa: string; en: string }> = {
   category: { fa: 'دسته‌بندی', en: 'Category' },
   requiredItem: { fa: 'مورد مورد نیاز', en: 'Required Item' },
   difficultyLevel: { fa: 'سطح دشواری', en: 'Difficulty Level' },
+};
+
+// Helper function to get type label with fallback
+const getTypeLabel = (type: string, language: 'fa' | 'en'): string => {
+  const label = defaultTypeLabels[type];
+  if (label) {
+    return label[language];
+  }
+  // Fallback: capitalize first letter and return as-is
+  return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export default function AdminImportExport({
@@ -37,7 +49,7 @@ export default function AdminImportExport({
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const typeLabel = typeLabels[type][language];
+  const typeLabel = getTypeLabel(type, language);
   const isFa = language === 'fa';
 
   const handleExport = async () => {

@@ -126,6 +126,40 @@ model RequiredItem {
   games     GameRequiredItem[]
 }
 
+// نوع بازی - تنظیمات
+model GameType {
+  id        String   @id @default(cuid())
+  nameFa    String
+  nameEn    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Dataset - مجموعه داده‌ها
+model Dataset {
+  id        String        @id @default(cuid())
+  nameFa    String
+  nameEn    String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  items     DatasetItem[]
+}
+
+// DatasetItem - رکوردهای داخل هر Dataset
+model DatasetItem {
+  id        String   @id @default(cuid())
+  datasetId String
+  nameFa    String
+  nameEn    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([datasetId])
+}
+
 // ارتباط چند-به-چند بازی و دسته‌بندی
 model GameCategory {
   id         String   @id @default(cuid())
