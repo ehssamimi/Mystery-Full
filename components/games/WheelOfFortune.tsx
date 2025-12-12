@@ -89,7 +89,9 @@ export default function WheelOfFortune({
       ctx.rotate(startAngle + anglePerItem / 2);
       ctx.textAlign = 'center';
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 16px Arial';
+      // اندازه فونت بر اساس size چرخ
+      const fontSize = size === 'lg' ? 32 : size === 'md' ? 24 : 20;
+      ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillText(item, radius / 1.5, 0);
       ctx.restore();
     });
@@ -102,7 +104,7 @@ export default function WheelOfFortune({
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 3;
     ctx.stroke();
-  }, [items, wheelSize, radius, centerX, centerY]);
+  }, [items, wheelSize, radius, centerX, centerY, size]);
 
   const handleSpin = () => {
     if (isSpinning || items.length === 0) return;
@@ -243,9 +245,9 @@ export default function WheelOfFortune({
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             className="text-center"
           >
-            <div className="px-6 py-3 bg-accent/20 border border-accent/50 rounded-xl backdrop-blur-sm">
-              <p className="text-sm text-text-secondary mb-1">نتیجه:</p>
-              <p className="text-lg font-bold text-accent glow-text">
+            <div className="px-8 py-4 bg-accent/20 border border-accent/50 rounded-xl backdrop-blur-sm">
+              <p className="text-base text-text-secondary mb-2">نتیجه:</p>
+              <p className="text-5xl font-bold text-white">
                 {selectedItem}
               </p>
             </div>

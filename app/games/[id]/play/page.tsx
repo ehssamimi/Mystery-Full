@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import UserNavbar from '@/components/UserNavbar';
-import QuestionSwiper from '@/components/games/QuestionSwiper';
+// import QuestionSwiper from '@/components/games/QuestionSwiper';
+import WheelOfFortune from '@/components/games/WheelOfFortune';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 import { Game } from '@/types/game';
@@ -22,17 +23,25 @@ export default function GamePlayPage() {
   // لیست نمونه سوالات برای تست
   // TODO: می‌توانی این سوالات را از game data یا API بگیر
   // مثال: const questions = game.questions || sampleQuestions;
-  const sampleQuestions = [
-    'آیا ترجیح می‌دهی یک شب در خانه بمانی یا به مهمانی بروی؟',
-    'آیا ترجیح می‌دهی پیتزا بخوری یا سوشی؟',
-    'آیا ترجیح می‌دهی فیلم ببینی یا کتاب بخوانی؟',
-    'آیا ترجیح می‌دهی به ساحل بروی یا به کوه؟',
-    'آیا ترجیح می‌دهی صبح زود بیدار شوی یا دیر بخوابی؟',
-    'آیا ترجیح می‌دهی موسیقی کلاسیک گوش کنی یا راک؟',
-    'آیا ترجیح می‌دهی قهوه بنوشی یا چای؟',
-    'آیا ترجیح می‌دهی سفر به اروپا بروی یا آسیا؟',
-    'آیا ترجیح می‌دهی ورزش کنی یا بازی ویدیویی بازی کنی؟',
-    'آیا ترجیح می‌دهی حیوان خانگی داشته باشی یا نه؟',
+  // const sampleQuestions = [
+  //   'آیا ترجیح می‌دهی یک شب در خانه بمانی یا به مهمانی بروی؟',
+  //   'آیا ترجیح می‌دهی پیتزا بخوری یا سوشی؟',
+  //   'آیا ترجیح می‌دهی فیلم ببینی یا کتاب بخوانی؟',
+  //   'آیا ترجیح می‌دهی به ساحل بروی یا به کوه؟',
+  //   'آیا ترجیح می‌دهی صبح زود بیدار شوی یا دیر بخوابی؟',
+  //   'آیا ترجیح می‌دهی موسیقی کلاسیک گوش کنی یا راک؟',
+  //   'آیا ترجیح می‌دهی قهوه بنوشی یا چای؟',
+  //   'آیا ترجیح می‌دهی سفر به اروپا بروی یا آسیا؟',
+  //   'آیا ترجیح می‌دهی ورزش کنی یا بازی ویدیویی بازی کنی؟',
+  //   'آیا ترجیح می‌دهی حیوان خانگی داشته باشی یا نه؟',
+  // ];
+
+  // حروف الفبای فارسی
+  const persianAlphabet = [
+    'آ', 'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ',
+    'د', 'ذ', 'ر', 'ز', 'ژ', 'س', 'ش', 'ص', 'ض', 'ط',
+    'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن',
+    'و', 'ه', 'ی'
   ];
 
   useEffect(() => {
@@ -81,31 +90,40 @@ export default function GamePlayPage() {
     };
   }, []);
 
-  // هندل کردن swipe سوال
-  const handleSwipe = (question: string | { id?: string; text: string }, direction: 'left' | 'right') => {
-    const questionText = typeof question === 'string' ? question : question.text;
-    console.log(`سوال ${direction === 'right' ? 'قبول' : 'رد'} شد:`, questionText);
+  // // هندل کردن swipe سوال
+  // const handleSwipe = (question: string | { id?: string; text: string }, direction: 'left' | 'right') => {
+  //   const questionText = typeof question === 'string' ? question : question.text;
+  //   console.log(`سوال ${direction === 'right' ? 'قبول' : 'رد'} شد:`, questionText);
     
+  //   // TODO: اینجا می‌توانی منطق بازی را اضافه کنی:
+  //   // - ذخیره انتخاب کاربر در database
+  //   // - ارسال به API برای پردازش
+  //   // - به‌روزرسانی state بازی
+  //   // مثال:
+  //   // await fetch('/api/game/swipe', {
+  //   //   method: 'POST',
+  //   //   body: JSON.stringify({ gameId: params.id, question, direction, playerCount })
+  //   // });
+  // };
+
+  // // هندل کردن تمام شدن سوالات
+  // const handleFinished = () => {
+  //   console.log('تمام سوالات تمام شد!');
+  //   // TODO: اینجا می‌توانی:
+  //   // - نمایش نتیجه بازی
+  //   // - redirect به صفحه نتیجه
+  //   // - نمایش پیام تبریک
+  //   // مثال:
+  //   // router.push(`/games/${params.id}/result?players=${playerCount}`);
+  // };
+
+  // هندل کردن انتخاب آیتم از چرخ
+  const handleItemSelect = (item: string, index: number) => {
+    console.log('آیتم انتخاب شده:', item, 'شاخص:', index);
     // TODO: اینجا می‌توانی منطق بازی را اضافه کنی:
     // - ذخیره انتخاب کاربر در database
     // - ارسال به API برای پردازش
     // - به‌روزرسانی state بازی
-    // مثال:
-    // await fetch('/api/game/swipe', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ gameId: params.id, question, direction, playerCount })
-    // });
-  };
-
-  // هندل کردن تمام شدن سوالات
-  const handleFinished = () => {
-    console.log('تمام سوالات تمام شد!');
-    // TODO: اینجا می‌توانی:
-    // - نمایش نتیجه بازی
-    // - redirect به صفحه نتیجه
-    // - نمایش پیام تبریک
-    // مثال:
-    // router.push(`/games/${params.id}/result?players=${playerCount}`);
   };
 
   if (loading) {
@@ -155,17 +173,17 @@ export default function GamePlayPage() {
             </p>
           </motion.div>
 
-          {/* Question Swiper Component */}
+          {/* Wheel of Fortune Component */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
             className="flex justify-center mb-8"
           >
-            <QuestionSwiper
-              questions={sampleQuestions}
-              onSwipe={handleSwipe}
-              onFinished={handleFinished}
+            <WheelOfFortune
+              items={persianAlphabet}
+              onSelect={handleItemSelect}
+              size="lg"
             />
           </motion.div>
 
