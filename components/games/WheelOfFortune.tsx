@@ -39,15 +39,45 @@ export default function WheelOfFortune({
   const [rotation, setRotation] = useState(0);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [windowWidth, setWindowWidth] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const sizeConfig = {
-    sm: { wheel: 300, button: 60 },
-    md: { wheel: 400, button: 80 },
-    lg: { wheel: 500, button: 100 },
+  // Detect window size for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    handleResize(); // Set initial value
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Responsive size calculation
+  const getResponsiveSize = () => {
+    if (windowWidth === 0) {
+      // Default to mobile size until we know the actual size
+      return { wheel: 280, button: 50 };
+    }
+    
+    if (windowWidth < 640) {
+      // Mobile: small wheel
+      return { wheel: 280, button: 50 };
+    } else if (windowWidth < 1024) {
+      // Tablet: medium wheel
+      return { wheel: 350, button: 65 };
+    } else {
+      // Desktop: use size prop or default to medium
+      const sizeConfig = {
+        sm: { wheel: 300, button: 60 },
+        md: { wheel: 400, button: 80 },
+        lg: { wheel: 500, button: 100 },
+      };
+      return sizeConfig[size];
+    }
   };
 
-  const config = sizeConfig[size];
+  const config = getResponsiveSize();
   const wheelSize = config.wheel;
   const centerX = wheelSize / 2;
   const centerY = wheelSize / 2;
@@ -89,8 +119,18 @@ export default function WheelOfFortune({
       ctx.rotate(startAngle + anglePerItem / 2);
       ctx.textAlign = 'center';
       ctx.fillStyle = '#000';
-      // اندازه فونت بر اساس size چرخ
-      const fontSize = size === 'lg' ? 32 : size === 'md' ? 24 : 20;
+      // اندازه فونت کوچکتر و ریسپانسیو
+      let fontSize: number;
+      if (windowWidth < 640) {
+        // Mobile: فونت خیلی کوچک
+        fontSize = 12;
+      } else if (windowWidth < 1024) {
+        // Tablet: فونت متوسط
+        fontSize = 16;
+      } else {
+        // Desktop: فونت بر اساس size prop (کوچکتر از قبل)
+        fontSize = size === 'lg' ? 20 : size === 'md' ? 16 : 14;
+      }
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillText(item, radius / 1.5, 0);
       ctx.restore();
@@ -104,7 +144,7 @@ export default function WheelOfFortune({
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 3;
     ctx.stroke();
-  }, [items, wheelSize, radius, centerX, centerY, size]);
+  }, [items, wheelSize, radius, centerX, centerY, size, windowWidth]);
 
   const handleSpin = () => {
     if (isSpinning || items.length === 0) return;
@@ -155,27 +195,24 @@ export default function WheelOfFortune({
   }
 
   return (
-    <div className={`flex flex-col items-center gap-6 ${className}`}>
-      {/* نشانگر بالا */}
+    <div className={`flex flex-col items-center gap-3 sm:gap-4 md:gap-6 ${className}`}>
+      {/* نشانگر بالا - ریسپانسیو */}
       <div
-        className="relative z-20"
-        style={{
-          width: 0,
-          height: 0,
-          borderLeft: '20px solid transparent',
-          borderRight: '20px solid transparent',
-          borderTop: '40px solid var(--accent)',
-          marginBottom: '0px',
-        }}
+        className="relative z-20 w-0 h-0 border-l-[12px] sm:border-l-[16px] border-r-[12px] sm:border-r-[16px] border-t-[24px] sm:border-t-[32px] border-l-transparent border-r-transparent border-t-[var(--accent)] mb-0"
       />
 
-      {/* کانتینر چرخ */}
+      {/* کانتینر چرخ - ریسپانسیو */}
       <div
-        className="relative"
-        style={{ width: wheelSize, height: wheelSize }}
+        className="relative w-full max-w-full flex items-center justify-center"
+        style={{ 
+          width: wheelSize, 
+          height: wheelSize,
+          maxWidth: '100%',
+        }}
       >
         {/* چرخ */}
         <div
+          className="w-full h-full"
           style={{
             transform: `rotate(${rotation}deg)`,
             transition: isSpinning
@@ -187,9 +224,12 @@ export default function WheelOfFortune({
             ref={canvasRef}
             width={wheelSize}
             height={wheelSize}
+            className="w-full h-full max-w-full"
             style={{
               borderRadius: '50%',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              boxShadow: windowWidth < 640 
+                ? '0 15px 30px -8px rgba(0, 0, 0, 0.25)' 
+                : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           />
         </div>
@@ -227,15 +267,15 @@ export default function WheelOfFortune({
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
+              className="w-4 h-4 sm:w-6 sm:h-6 border sm:border-2 border-white border-t-transparent rounded-full"
             />
           ) : (
-            <span className="text-2xl">🎯</span>
+            <span className="text-lg sm:text-2xl">🎯</span>
           )}
         </button>
       </div>
 
-      {/* نمایش نتیجه */}
+      {/* نمایش نتیجه - ریسپانسیو */}
       <AnimatePresence>
         {selectedItem && !isSpinning && (
           <motion.div
@@ -243,11 +283,11 @@ export default function WheelOfFortune({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="text-center"
+            className="text-center w-full px-4 sm:px-0"
           >
-            <div className="px-8 py-4 bg-accent/20 border border-accent/50 rounded-xl backdrop-blur-sm">
-              <p className="text-base text-text-secondary mb-2">نتیجه:</p>
-              <p className="text-5xl font-bold text-white">
+            <div className="px-4 py-3 sm:px-8 sm:py-4 bg-accent/20 border border-accent/50 rounded-xl backdrop-blur-sm max-w-md mx-auto">
+              <p className="text-sm sm:text-base text-text-secondary mb-1 sm:mb-2">نتیجه:</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white break-words">
                 {selectedItem}
               </p>
             </div>

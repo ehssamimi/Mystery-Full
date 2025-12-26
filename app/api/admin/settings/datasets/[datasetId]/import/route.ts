@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 // Helper function برای چک کردن نقش ادمین
 async function checkAdmin(request: NextRequest) {
@@ -71,15 +72,12 @@ export async function POST(
 
       try {
         const rawId = row.id;
-        if (!rawId) {
-          errors.push({ rowIndex: index + 2, message: 'id خالی است' });
-          continue;
-        }
-
-        const id = String(rawId).trim();
-        if (!id) {
-          errors.push({ rowIndex: index + 2, message: 'id نامعتبر است' });
-          continue;
+        // اگر id خالی بود، یک id جدید می‌سازیم
+        let id: string;
+        if (!rawId || !String(rawId).trim()) {
+          id = randomUUID();
+        } else {
+          id = String(rawId).trim();
         }
 
         // ساخت data برای Prisma با توجه به فیلدهای موجود

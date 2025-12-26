@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import UserNavbar from '@/components/UserNavbar';
 // import QuestionSwiper from '@/components/games/QuestionSwiper';
-import WheelOfFortune from '@/components/games/WheelOfFortune';
+import PeelRevealCards from '@/components/games/PeelRevealCards';
+import TeamManagement from '@/components/teams/TeamManagement';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 import { Game } from '@/types/game';
@@ -17,6 +18,7 @@ export default function GamePlayPage() {
   const playerCount = parseInt(searchParams.get('players') || '2', 10);
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showGame, setShowGame] = useState(false);
   const { language } = useLanguageStore();
   const t = translations[language];
 
@@ -36,13 +38,6 @@ export default function GamePlayPage() {
   //   'آیا ترجیح می‌دهی حیوان خانگی داشته باشی یا نه؟',
   // ];
 
-  // حروف الفبای فارسی
-  const persianAlphabet = [
-    'آ', 'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ',
-    'د', 'ذ', 'ر', 'ز', 'ژ', 'س', 'ش', 'ص', 'ض', 'ط',
-    'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن',
-    'و', 'ه', 'ی'
-  ];
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -117,14 +112,6 @@ export default function GamePlayPage() {
   //   // router.push(`/games/${params.id}/result?players=${playerCount}`);
   // };
 
-  // هندل کردن انتخاب آیتم از چرخ
-  const handleItemSelect = (item: string, index: number) => {
-    console.log('آیتم انتخاب شده:', item, 'شاخص:', index);
-    // TODO: اینجا می‌توانی منطق بازی را اضافه کنی:
-    // - ذخیره انتخاب کاربر در database
-    // - ارسال به API برای پردازش
-    // - به‌روزرسانی state بازی
-  };
 
   if (loading) {
     return (
@@ -156,53 +143,100 @@ export default function GamePlayPage() {
     );
   }
 
+  const handleTeamComplete = (teamA: string[], teamB: string[]) => {
+    // Show the game after teams are set up
+    setShowGame(true);
+  };
+
   return (
     <>
       <UserNavbar />
-      <div className="min-h-screen pt-20 md:pt-24 p-4 md:p-8 relative z-10">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <h1 className="text-3xl md:text-4xl font-bold glow-text mb-2">{game.name}</h1>
-            <p className="text-lg text-text-secondary">
-              {playerCount} {t.players}
-            </p>
-          </motion.div>
+      <div className="min-h-screen pt-20 md:pt-24 p-4 md:p-8 relative z-10 animated-bg">
+        <div className="max-w-7xl mx-auto">
+          {!showGame ? (
+            <>
+              {/* Team Management Section */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <div className="text-center mb-6">
+                  <h1 className="text-3xl md:text-4xl font-bold glow-text mb-2">{game.name}</h1>
+                  <p className="text-lg text-text-secondary">
+                    {playerCount} {t.players}
+                  </p>
+                </div>
+              </motion.div>
 
-          {/* Wheel of Fortune Component */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex justify-center mb-8"
-          >
-            <WheelOfFortune
-              items={persianAlphabet}
-              onSelect={handleItemSelect}
-              size="lg"
-            />
-          </motion.div>
+              <TeamManagement
+                playerCount={playerCount}
+                onComplete={handleTeamComplete}
+                showStartButton={true}
+                startButtonText="شروع بازی"
+              />
+            </>
+          ) : (
+            <>
+              {/* Game Section */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="max-w-4xl mx-auto"
+              >
+                {/* Header */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center mb-8"
+                >
+                  <h1 className="text-3xl md:text-4xl font-bold glow-text mb-2">{game.name}</h1>
+                  <p className="text-lg text-text-secondary">
+                    {playerCount} {t.players}
+                  </p>
+                </motion.div>
 
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex justify-center"
-          >
-            <motion.button
-              onClick={() => router.push(`/games/${params.id}?players=${playerCount}`)}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn-primary"
-            >
-              🏠 {t.backToHome}
-            </motion.button>
-          </motion.div>
+                {/* Peel Reveal Cards Component */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex justify-center mb-8"
+                >
+                  <PeelRevealCards
+                    frontText="کارت جلویی را به بالا بکشید"
+                    backText="کارت پشتی را پیدا کردید! 🎉"
+                  />
+                </motion.div>
+
+                {/* Back Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex justify-center gap-4"
+                >
+                  <motion.button
+                    onClick={() => setShowGame(false)}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="btn-primary"
+                  >
+                    بازگشت به تیم‌ها
+                  </motion.button>
+                  <motion.button
+                    onClick={() => router.push(`/games/${params.id}?players=${playerCount}`)}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="btn-primary"
+                  >
+                    🏠 {t.backToHome}
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
     </>

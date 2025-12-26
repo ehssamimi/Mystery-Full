@@ -4,6 +4,7 @@ export const StorageKeys = {
   FAVORITES: 'mystery-full-favorites',
   HISTORY: 'mystery-full-history',
   PLAYER_COUNT: 'mystery-full-player-count',
+  TEAM_MEMBERS: 'mystery-full-team-members',
 } as const;
 
 // استفاده از API برای favorites (ذخیره در دیتابیس)
@@ -117,5 +118,41 @@ export function getPlayerCount(): number | null {
 export function setPlayerCount(count: number): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(StorageKeys.PLAYER_COUNT, count.toString());
+}
+
+// Team Members Storage
+export interface TeamMembersData {
+  teamMembers: string[];
+  lastPlayerCount: number;
+  teamA?: string[];
+  teamB?: string[];
+}
+
+export function getTeamMembers(): TeamMembersData | null {
+  if (typeof window === 'undefined') return null;
+  const data = localStorage.getItem(StorageKeys.TEAM_MEMBERS);
+  if (!data) return null;
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error parsing team members data:', error);
+    return null;
+  }
+}
+
+export function saveTeamMembers(members: string[], playerCount: number, teamA?: string[], teamB?: string[]): void {
+  if (typeof window === 'undefined') return;
+  const data: TeamMembersData = {
+    teamMembers: members,
+    lastPlayerCount: playerCount,
+    teamA,
+    teamB,
+  };
+  localStorage.setItem(StorageKeys.TEAM_MEMBERS, JSON.stringify(data));
+}
+
+export function clearTeamMembers(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(StorageKeys.TEAM_MEMBERS);
 }
 

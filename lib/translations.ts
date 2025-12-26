@@ -150,6 +150,9 @@ export const translations = {
     // Languages
     persian: 'فارسی',
     english: 'English',
+    
+    // Game Interactions
+    dragUp: 'به بالا بکشید',
   },
   en: {
     // Auth
@@ -302,6 +305,9 @@ export const translations = {
     // Languages
     persian: 'فارسی',
     english: 'English',
+    
+    // Game Interactions
+    dragUp: 'Drag up',
   },
 };
 
