@@ -129,7 +129,6 @@ export const translations = {
     rateGame: 'امتیاز به بازی',
     yourRating: 'امتیاز شما',
     favoriteGame: 'بازی مورد علاقه',
-    playGame: 'بازی کن',
     
     // Game Roulette
     selecting: 'در حال انتخاب...',
@@ -153,6 +152,34 @@ export const translations = {
     
     // Game Interactions
     dragUp: 'به بالا بکشید',
+    playerWithNumber: 'بازیکن {number}',
+    
+    // Random Generator & Result Screen
+    generatingGame: 'در حال احضار بازی',
+    randomizing: 'تصادفی‌سازی در حال تصمیم‌گیری است',
+    gameDecided: 'بازی تصمیم گرفته است',
+    yourRandomGame: 'بازی تصادفی شما',
+    playGame: 'بازی کن',
+    skipGame: 'رد کردن',
+    skipGameFree: 'رایگان',
+    skipGameCost: 'هزینه رد کردن',
+    freeSkipsRemaining: 'شما {count} رد کردن رایگان دارید',
+    noFreeSkips: 'رد کردن رایگان ندارید',
+    
+    // Game Flow & Spyfall
+    dragCardUp: 'کارت رو بالا بکشید',
+    pleaseDragCardUp: 'لطفا کارت رو به بالا بکشید',
+    nextPlayer: 'نفر بعد',
+    stop: 'توقف',
+    resume: 'ادامه',
+    tryAgain: 'دوباره امتحان کنید',
+    youAreTheSpy: 'شما جاسوس هستین',
+    nextStage: 'مرحله بعد',
+    formTeam: 'تشکیل تیم',
+    addPlayer: 'افزودن بازیکن',
+    removePlayer: 'حذف بازیکن',
+    clearText: 'پاک کردن متن',
+    gameTypeNotSupported: 'نوع بازی پشتیبانی نمی‌شود',
   },
   en: {
     // Auth
@@ -284,7 +311,6 @@ export const translations = {
     rateGame: 'Rate this game',
     yourRating: 'Your rating',
     favoriteGame: 'Favorite game',
-    playGame: 'Play Game',
     
     // Game Roulette
     selecting: 'Selecting...',
@@ -308,6 +334,34 @@ export const translations = {
     
     // Game Interactions
     dragUp: 'Drag up',
+    playerWithNumber: 'Player {number}',
+    
+    // Random Generator & Result Screen
+    generatingGame: 'Generating game',
+    randomizing: 'Randomization is making a decision',
+    gameDecided: 'Game has decided',
+    yourRandomGame: 'Your random game',
+    playGame: 'Play Game',
+    skipGame: 'Skip',
+    skipGameFree: 'Free',
+    skipGameCost: 'Skip cost',
+    freeSkipsRemaining: 'You have {count} free skips remaining',
+    noFreeSkips: 'You don\'t have free skips',
+    
+    // Game Flow & Spyfall
+    dragCardUp: 'Drag the card up',
+    pleaseDragCardUp: 'Please drag the card up',
+    nextPlayer: 'Next Player',
+    stop: 'Stop',
+    resume: 'Resume',
+    tryAgain: 'Try Again',
+    youAreTheSpy: 'You are the spy',
+    nextStage: 'Next Stage',
+    formTeam: 'Form Team',
+    addPlayer: 'Add Player',
+    removePlayer: 'Remove Player',
+    clearText: 'Clear Text',
+    gameTypeNotSupported: 'Game type not supported',
   },
 };
 

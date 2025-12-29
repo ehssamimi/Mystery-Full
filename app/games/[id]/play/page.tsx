@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import UserNavbar from '@/components/UserNavbar';
-// import QuestionSwiper from '@/components/games/QuestionSwiper';
-import PeelRevealCards from '@/components/games/PeelRevealCards';
-import TeamManagement from '@/components/teams/TeamManagement';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
-import { Game } from '@/types/game';
+import { Game, Dataset } from '@/types/game';
 import { motion } from 'framer-motion';
+import Flow1Spyfall from '@/components/games/flows/Flow1Spyfall';
+
+const FLOW1_GAME_TYPE_ID = 'cmjnzm9l300002p0ccu7h1wbq';
 
 export default function GamePlayPage() {
   const params = useParams();
@@ -17,8 +16,8 @@ export default function GamePlayPage() {
   const router = useRouter();
   const playerCount = parseInt(searchParams.get('players') || '2', 10);
   const [game, setGame] = useState<Game | null>(null);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showGame, setShowGame] = useState(false);
   const { language } = useLanguageStore();
   const t = translations[language];
 
@@ -40,12 +39,33 @@ export default function GamePlayPage() {
 
 
   useEffect(() => {
-    const fetchGame = async () => {
+    const fetchGameAndDatasets = async () => {
       try {
+        // Fetch game data
         const response = await fetch('/api/games');
         const games: Game[] = await response.json();
         const foundGame = games.find((g) => g.id === params.id);
         setGame(foundGame || null);
+
+        // If game has datasetIds, fetch all datasets
+        if (foundGame && foundGame.datasetIds && foundGame.datasetIds.length > 0) {
+          try {
+            const datasetsPromises = foundGame.datasetIds.map(async (datasetId) => {
+              const datasetResponse = await fetch(`/api/datasets/${datasetId}`);
+              const datasetData = await datasetResponse.json();
+              if (datasetData.success && datasetData.dataset) {
+                return datasetData.dataset;
+              }
+              return null;
+            });
+
+            const fetchedDatasets = await Promise.all(datasetsPromises);
+            setDatasets(fetchedDatasets.filter((ds) => ds !== null) as Dataset[]);
+          } catch (error) {
+            console.error('Error fetching datasets:', error);
+            setDatasets([]);
+          }
+        }
       } catch (error) {
         console.error('Error fetching game:', error);
         setGame(null);
@@ -54,7 +74,7 @@ export default function GamePlayPage() {
       }
     };
 
-    fetchGame();
+    fetchGameAndDatasets();
   }, [params.id]);
 
   // جلوگیری از scroll افقی (overflow-x hidden) در موبایل
@@ -85,161 +105,59 @@ export default function GamePlayPage() {
     };
   }, []);
 
-  // // هندل کردن swipe سوال
-  // const handleSwipe = (question: string | { id?: string; text: string }, direction: 'left' | 'right') => {
-  //   const questionText = typeof question === 'string' ? question : question.text;
-  //   console.log(`سوال ${direction === 'right' ? 'قبول' : 'رد'} شد:`, questionText);
-    
-  //   // TODO: اینجا می‌توانی منطق بازی را اضافه کنی:
-  //   // - ذخیره انتخاب کاربر در database
-  //   // - ارسال به API برای پردازش
-  //   // - به‌روزرسانی state بازی
-  //   // مثال:
-  //   // await fetch('/api/game/swipe', {
-  //   //   method: 'POST',
-  //   //   body: JSON.stringify({ gameId: params.id, question, direction, playerCount })
-  //   // });
-  // };
-
-  // // هندل کردن تمام شدن سوالات
-  // const handleFinished = () => {
-  //   console.log('تمام سوالات تمام شد!');
-  //   // TODO: اینجا می‌توانی:
-  //   // - نمایش نتیجه بازی
-  //   // - redirect به صفحه نتیجه
-  //   // - نمایش پیام تبریک
-  //   // مثال:
-  //   // router.push(`/games/${params.id}/result?players=${playerCount}`);
-  // };
+  // Handle back button
+  const handleBack = () => {
+    router.push(`/games/${params.id}?players=${playerCount}`);
+  };
 
 
   if (loading) {
     return (
-      <>
-        <UserNavbar />
-        <div className="min-h-screen flex items-center justify-center pt-20">
-          <div className="text-2xl glow-text">{t.loading}</div>
-        </div>
-      </>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl glow-text">{t.loading}</div>
+      </div>
     );
   }
 
   if (!game) {
     return (
-      <>
-        <UserNavbar />
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 pt-20">
-          <h2 className="text-3xl font-bold glow-text mb-4">{t.noGameFound}</h2>
-          <motion.button
-            onClick={() => router.push(`/games/${params.id}?players=${playerCount}`)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="btn-primary mt-4"
-          >
-            {t.backToHome}
-          </motion.button>
-        </div>
-      </>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <h2 className="text-3xl font-bold glow-text mb-4">{t.noGameFound}</h2>
+        <motion.button
+          onClick={() => router.push(`/games/${params.id}?players=${playerCount}`)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="btn-primary mt-4"
+        >
+          {t.backToHome}
+        </motion.button>
+      </div>
     );
   }
 
-  const handleTeamComplete = (teamA: string[], teamB: string[]) => {
-    // Show the game after teams are set up
-    setShowGame(true);
-  };
+  // Get gameType ID from game.playtype or game.gameType
+  const gameTypeId = game.playtype?.id || game.gameType?.id;
 
+  // Route to appropriate flow based on gameType.id
+  if (gameTypeId === FLOW1_GAME_TYPE_ID) {
+    return <Flow1Spyfall playerCount={playerCount} datasets={datasets} onBack={handleBack} />;
+  }
+
+  // Default/Unknown flow - show error or default message
   return (
-    <>
-      <UserNavbar />
-      <div className="min-h-screen pt-20 md:pt-24 p-4 md:p-8 relative z-10 animated-bg">
-        <div className="max-w-7xl mx-auto">
-          {!showGame ? (
-            <>
-              {/* Team Management Section */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
-              >
-                <div className="text-center mb-6">
-                  <h1 className="text-3xl md:text-4xl font-bold glow-text mb-2">{game.name}</h1>
-                  <p className="text-lg text-text-secondary">
-                    {playerCount} {t.players}
-                  </p>
-                </div>
-              </motion.div>
-
-              <TeamManagement
-                playerCount={playerCount}
-                onComplete={handleTeamComplete}
-                showStartButton={true}
-                startButtonText="شروع بازی"
-              />
-            </>
-          ) : (
-            <>
-              {/* Game Section */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-4xl mx-auto"
-              >
-                {/* Header */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center mb-8"
-                >
-                  <h1 className="text-3xl md:text-4xl font-bold glow-text mb-2">{game.name}</h1>
-                  <p className="text-lg text-text-secondary">
-                    {playerCount} {t.players}
-                  </p>
-                </motion.div>
-
-                {/* Peel Reveal Cards Component */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex justify-center mb-8"
-                >
-                  <PeelRevealCards
-                    frontText="کارت جلویی را به بالا بکشید"
-                    backText="کارت پشتی را پیدا کردید! 🎉"
-                  />
-                </motion.div>
-
-                {/* Back Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex justify-center gap-4"
-                >
-                  <motion.button
-                    onClick={() => setShowGame(false)}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="btn-primary"
-                  >
-                    بازگشت به تیم‌ها
-                  </motion.button>
-                  <motion.button
-                    onClick={() => router.push(`/games/${params.id}?players=${playerCount}`)}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="btn-primary"
-                  >
-                    🏠 {t.backToHome}
-                  </motion.button>
-                </motion.div>
-              </motion.div>
-            </>
-          )}
-        </div>
-      </div>
-    </>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <h2 className="text-3xl font-bold glow-text mb-4">
+        {language === 'fa' ? 'نوع بازی پشتیبانی نمی‌شود' : 'Game type not supported'}
+      </h2>
+      <motion.button
+        onClick={handleBack}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="btn-primary mt-4"
+      >
+        {t.backToHome}
+      </motion.button>
+    </div>
   );
 }
 

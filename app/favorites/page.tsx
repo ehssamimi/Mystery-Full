@@ -7,7 +7,7 @@ import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 import { getFavorites, removeFromFavorites } from '@/lib/storage';
 import { Game } from '@/types/game';
-import UserNavbar from '@/components/UserNavbar';
+// import UserNavbar from '@/components/UserNavbar'; // Removed - only show on home page
 
 export default function FavoritesPage() {
   const { language, isRTL } = useLanguageStore();
@@ -46,19 +46,14 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <>
-        <UserNavbar />
-        <div className="min-h-screen flex items-center justify-center pt-20">
-          <div className="text-2xl glow-text">{t.loading}</div>
-        </div>
-      </>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl glow-text">{t.loading}</div>
+      </div>
     );
   }
 
   return (
-    <>
-      <UserNavbar />
-      <div className="min-h-screen pt-20 md:pt-24 p-4 md:p-8 relative z-10">
+    <div className="min-h-screen p-4 md:p-8 relative z-10">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
@@ -164,8 +159,7 @@ export default function FavoritesPage() {
             </div>
           )}
         </div>
-      </div>
-    </>
+    </div>
   );
 }
 

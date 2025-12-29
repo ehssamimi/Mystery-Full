@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import GameRoulette from '@/components/GameRoulette';
-import UserNavbar from '@/components/UserNavbar';
+// import UserNavbar from '@/components/UserNavbar'; // Removed - only show on home page
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -18,9 +18,7 @@ export default function AlphabetPage() {
   // اگر حرف انتخاب شده، نمایش بده
   if (selectedLetter) {
     return (
-      <>
-        <UserNavbar />
-        <div className="min-h-screen flex items-center justify-center pt-20 p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -67,18 +65,14 @@ export default function AlphabetPage() {
               بازگشت به خانه
             </motion.button>
           </motion.div>
-        </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <UserNavbar />
-      <GameRoulette
-        onItemSelected={handleLetterSelected}
-      />
-    </>
+    <GameRoulette
+      onItemSelected={handleLetterSelected}
+    />
   );
 }
 

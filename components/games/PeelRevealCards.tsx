@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, useMotionValueEvent } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useLanguageStore } from '@/lib/store/language-store';
 import { translations } from '@/lib/translations';
 
@@ -8,26 +9,48 @@ interface PeelRevealCardsProps {
   frontText: string;
   backText: string;
   className?: string;
+  onReveal?: () => void;
+  isRevealed?: boolean;
 }
 
 export default function PeelRevealCards({
   frontText,
   backText,
   className = '',
+  onReveal,
+  isRevealed = false,
 }: PeelRevealCardsProps) {
   const { language } = useLanguageStore();
   const t = translations[language];
   // Motion value برای track کردن موقعیت drag
   const y = useMotionValue(0);
+  const [hasBeenRevealed, setHasBeenRevealed] = useState(isRevealed);
   
   // مقدار حداکثر drag به بالا (منفی = بالا)
   const maxDragUp = -280;
+  // Threshold برای تشخیص اینکه کارت باز شده (حدود 70% از maxDragUp)
+  const revealThreshold = maxDragUp * 0.7; // حدود -196
 
   // Transform برای opacity کارت پشتی: 0 تا 1 وقتی y از 0 تا maxDragUp
   const backOpacity = useTransform(y, [0, maxDragUp], [0, 1]);
   
   // Transform برای translateY کارت پشتی: 12 تا 0 وقتی y از 0 تا maxDragUp
   const backTranslateY = useTransform(y, [0, maxDragUp], [12, 0]);
+
+  // Detect when card is revealed
+  useMotionValueEvent(y, 'change', (latest) => {
+    if (!hasBeenRevealed && latest <= revealThreshold) {
+      setHasBeenRevealed(true);
+      if (onReveal) {
+        onReveal();
+      }
+    }
+  });
+
+  // Reset hasBeenRevealed when isRevealed prop changes
+  useEffect(() => {
+    setHasBeenRevealed(isRevealed);
+  }, [isRevealed]);
 
   // Handle drag end - همیشه فوراً به 0 برگردد
   const handleDragEnd = () => {
@@ -73,10 +96,28 @@ export default function PeelRevealCards({
             {frontText}
           </p>
           
-          {/* نشانگر drag (فقط در desktop) */}
-          <div className="hidden sm:block absolute bottom-4 left-1/2 transform -translate-x-1/2 text-text-secondary text-sm opacity-60">
-            ↓ {t.dragUp}
-          </div>
+          {/* نشانگر drag - در پایین وسط با فلش بالا */}
+          {!hasBeenRevealed && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-text-secondary text-xs sm:text-sm opacity-70 flex flex-col items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
+              </svg>
+              <span className="text-center">
+                {t.pleaseDragCardUp}
+              </span>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

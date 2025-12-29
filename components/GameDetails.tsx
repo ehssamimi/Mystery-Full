@@ -132,6 +132,24 @@ export default function GameDetails({ game, playerCount }: GameDetailsProps) {
           </p>
         </motion.div>
 
+        {/* Game Image */}
+        {game.imageUrl && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="mb-8"
+          >
+            <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden shadow-2xl border border-accent/20">
+              <img
+                src={game.imageUrl}
+                alt={game.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </motion.div>
+        )}
+
         {/* Special Message */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}

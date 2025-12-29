@@ -26,8 +26,16 @@ interface Game {
   difficulty: string;
   duration: number;
   materials?: string;
+  imageUrl?: string | null;
   isActive: boolean;
   difficultyLevelId?: string | null;
+  gameTypeId?: string | null;
+  datasets?: Array<{
+    id: string;
+    nameFa: string;
+    nameEn: string;
+  }>;
+  datasetIds?: string[];
 }
 
 interface DifficultyLevelOption {
@@ -44,6 +52,18 @@ interface CategoryOption {
 }
 
 interface RequiredItemOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+}
+
+interface DatasetOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+}
+
+interface GameTypeOption {
   id: string;
   nameFa: string;
   nameEn: string;
@@ -74,9 +94,16 @@ export default function GamesPage() {
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  // State برای آپلود تصویر
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+
   const [difficultyOptions, setDifficultyOptions] = useState<DifficultyLevelOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [requiredItemOptions, setRequiredItemOptions] = useState<RequiredItemOption[]>([]);
+  const [datasetOptions, setDatasetOptions] = useState<DatasetOption[]>([]);
+  const [gameTypeOptions, setGameTypeOptions] = useState<GameTypeOption[]>([]);
 
   // Helper برای ساخت گزینه‌های استاندارد react-select
   const categorySelectOptions: SelectOption[] = categoryOptions.map((cat) => ({
@@ -87,6 +114,16 @@ export default function GamesPage() {
   const requiredItemSelectOptions: SelectOption[] = requiredItemOptions.map((item) => ({
     value: item.id,
     label: language === 'fa' ? item.nameFa : item.nameEn,
+  }));
+
+  const datasetSelectOptions: SelectOption[] = datasetOptions.map((dataset) => ({
+    value: dataset.id,
+    label: language === 'fa' ? dataset.nameFa : dataset.nameEn,
+  }));
+
+  const gameTypeSelectOptions: SelectOption[] = gameTypeOptions.map((gameType) => ({
+    value: gameType.id,
+    label: language === 'fa' ? gameType.nameFa : gameType.nameEn,
   }));
 
   function CategoryMultiSelectField({
@@ -176,6 +213,67 @@ export default function GamesPage() {
     );
   }
 
+  function DatasetMultiSelectField({
+    name,
+    initialDatasetIds,
+  }: {
+    name: string;
+    initialDatasetIds?: string[];
+  }) {
+    const [selected, setSelected] = useState<SelectOption[]>(() => {
+      if (!initialDatasetIds || initialDatasetIds.length === 0) return [];
+      return initialDatasetIds
+        .map((id) => datasetSelectOptions.find((o) => o.value === id))
+        .filter((opt): opt is SelectOption => opt !== undefined);
+    });
+
+    return (
+      <>
+        <Select
+          isMulti
+          options={datasetSelectOptions}
+          value={selected}
+          onChange={(value) => {
+            setSelected((value || []) as SelectOption[]);
+          }}
+          placeholder={language === 'fa' ? 'انتخاب Dataset...' : 'Select datasets...'}
+        />
+        {selected.map((opt) => (
+          <input key={opt.value} type="hidden" name={name} value={opt.value} />
+        ))}
+      </>
+    );
+  }
+
+  function GameTypeSelectField({
+    name,
+    initialGameTypeId,
+  }: {
+    name: string;
+    initialGameTypeId?: string | null;
+  }) {
+    const [selected, setSelected] = useState<SelectOption | null>(() => {
+      if (!initialGameTypeId) return null;
+      return gameTypeSelectOptions.find((o) => o.value === initialGameTypeId) || null;
+    });
+
+    return (
+      <>
+        <Select
+          options={gameTypeSelectOptions}
+          value={selected}
+          onChange={(value) => {
+            setSelected((value as SelectOption) || null);
+          }}
+          placeholder={language === 'fa' ? 'انتخاب نوع بازی...' : 'Select game type...'}
+          isClearable
+        />
+        {selected && <input type="hidden" name={name} value={selected.value} />}
+        {!selected && <input type="hidden" name={name} value="" />}
+      </>
+    );
+  }
+
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       router.push('/login');
@@ -188,6 +286,18 @@ export default function GamesPage() {
       fetchSettingsOptions();
     }
   }, [isAuthenticated, user]);
+
+  // Reset image preview when opening/closing forms
+  useEffect(() => {
+    if (!editingGame && !creatingGame) {
+      setImagePreview(null);
+      setUploadedImageUrl(null);
+    } else if (editingGame) {
+      // When editing, show existing image if available
+      setImagePreview(null);
+      setUploadedImageUrl(editingGame.imageUrl || null);
+    }
+  }, [editingGame, creatingGame]);
 
   const fetchGames = async () => {
     try {
@@ -324,21 +434,76 @@ export default function GamesPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // نمایش پیش‌نمایش فوری
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // آپلود به سرور
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/admin/games/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadedImageUrl(data.imageUrl);
+        addNotification({
+          type: 'success',
+          message: language === 'fa' ? 'تصویر با موفقیت آپلود شد' : 'Image uploaded successfully',
+        });
+      } else {
+        setImagePreview(null);
+        addNotification({
+          type: 'error',
+          message: data.error || (language === 'fa' ? 'خطا در آپلود تصویر' : 'Failed to upload image'),
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setImagePreview(null);
+      addNotification({
+        type: 'error',
+        message: language === 'fa' ? 'خطا در آپلود تصویر' : 'Failed to upload image',
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const fetchSettingsOptions = async () => {
     try {
-      const [dRes, cRes, rRes] = await Promise.all([
+      const [dRes, cRes, rRes, dsRes, gtRes] = await Promise.all([
         fetch('/api/admin/settings/difficulty-levels'),
         fetch('/api/admin/settings/categories'),
         fetch('/api/admin/settings/required-items'),
+        fetch('/api/admin/settings/datasets'),
+        fetch('/api/admin/settings/game-types'),
       ]);
 
       const dData = await dRes.json();
       const cData = await cRes.json();
       const rData = await rRes.json();
+      const dsData = await dsRes.json();
+      const gtData = await gtRes.json();
 
       if (dData.success) setDifficultyOptions(dData.items);
       if (cData.success) setCategoryOptions(cData.items);
       if (rData.success) setRequiredItemOptions(rData.items);
+      if (dsData.success) setDatasetOptions(dsData.items);
+      if (gtData.success) setGameTypeOptions(gtData.items);
     } catch (error) {
       console.error('Error fetching settings options:', error);
     }
@@ -362,8 +527,11 @@ export default function GamesPage() {
         difficultyLevelId: formData.get('difficultyLevelId') as string || undefined,
         duration: parseInt(formData.get('duration') as string),
         materials: formData.get('materials') as string || undefined,
+        imageUrl: uploadedImageUrl || undefined,
         categoryIds: formData.getAll('categoryIds') as string[],
         requiredItemIds: formData.getAll('requiredItemIds') as string[],
+        datasetIds: formData.getAll('datasetIds') as string[],
+        gameTypeId: formData.get('gameTypeId') as string || undefined,
       };
 
       const response = await fetch('/api/admin/games', {
@@ -377,6 +545,8 @@ export default function GamesPage() {
       if (data.success) {
         setGames((prev) => [data.game, ...prev]);
         setCreatingGame(false);
+        setImagePreview(null);
+        setUploadedImageUrl(null);
         addNotification({
           type: 'success',
           message: t.gameCreated,
@@ -436,8 +606,18 @@ export default function GamesPage() {
 
       const categoryIds = formData.getAll('categoryIds') as string[];
       const requiredItemIds = formData.getAll('requiredItemIds') as string[];
+      const datasetIds = formData.getAll('datasetIds') as string[];
+      const gameTypeId = formData.get('gameTypeId') as string | null;
       if (categoryIds.length > 0) payload.categoryIds = categoryIds;
       if (requiredItemIds.length > 0) payload.requiredItemIds = requiredItemIds;
+      if (datasetIds.length > 0) payload.datasetIds = datasetIds;
+      if (gameTypeId) payload.gameTypeId = gameTypeId;
+      else if (gameTypeId === '') payload.gameTypeId = null;
+      
+      // اگر تصویر جدید آپلود شده، آن را اضافه کن
+      if (uploadedImageUrl) {
+        payload.imageUrl = uploadedImageUrl;
+      }
 
       const response = await fetch('/api/admin/games', {
         method: 'PUT',
@@ -458,6 +638,8 @@ export default function GamesPage() {
         await fetchGames();
 
         setEditingGame(null);
+        setImagePreview(null);
+        setUploadedImageUrl(null);
         addNotification({
           type: 'success',
           message: t.gameUpdated,
@@ -677,6 +859,62 @@ export default function GamesPage() {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-2 text-text-secondary">
+            {language === 'fa' ? 'تصویر بازی' : 'Game Image'}
+          </label>
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleImageUpload}
+            disabled={uploadingImage}
+            className="w-full px-4 py-2 bg-bg-tertiary border border-accent/30 rounded-lg text-text-primary focus:outline-none focus:border-accent disabled:opacity-50"
+          />
+          {uploadingImage && (
+            <p className="text-sm text-text-secondary mt-2">
+              {language === 'fa' ? 'در حال آپلود...' : 'Uploading...'}
+            </p>
+          )}
+          {(imagePreview || uploadedImageUrl || game?.imageUrl) && (
+            <div className="mt-4 space-y-2">
+              <div className="relative">
+                <img
+                  src={imagePreview || uploadedImageUrl || game?.imageUrl || ''}
+                  alt="Preview"
+                  className="w-32 h-32 object-cover rounded-lg border border-accent/30"
+                />
+                {imagePreview && (
+                  <p className="text-xs text-text-secondary mt-1">
+                    {language === 'fa' ? 'پیش‌نمایش تصویر جدید' : 'New image preview'}
+                  </p>
+                )}
+                {!imagePreview && (uploadedImageUrl || game?.imageUrl) && (
+                  <p className="text-xs text-text-secondary mt-1">
+                    {language === 'fa' ? 'تصویر فعلی' : 'Current image'}
+                  </p>
+                )}
+              </div>
+              {!imagePreview && game?.imageUrl && (
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setUploadedImageUrl(null);
+                    setImagePreview(null);
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-xs px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all duration-200"
+                >
+                  {language === 'fa' ? 'حذف تصویر' : 'Remove image'}
+                </motion.button>
+              )}
+            </div>
+          )}
+          {(uploadedImageUrl || game?.imageUrl) && !imagePreview && (
+            <input type="hidden" name="imageUrl" value={uploadedImageUrl || game?.imageUrl || ''} />
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-text-secondary">
@@ -784,6 +1022,31 @@ export default function GamesPage() {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-text-secondary">
+              {language === 'fa' ? 'Dataset ها' : 'Datasets'}
+            </label>
+            <DatasetMultiSelectField
+              name="datasetIds"
+              initialDatasetIds={
+                game?.datasetIds || 
+                game?.datasets?.map((d) => d.id) || 
+                []
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-text-secondary">
+              {language === 'fa' ? 'نوع بازی' : 'Game Type'}
+            </label>
+            <GameTypeSelectField
+              name="gameTypeId"
+              initialGameTypeId={game?.gameTypeId}
+            />
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           <motion.button
             type="submit"
@@ -799,6 +1062,8 @@ export default function GamesPage() {
             onClick={() => {
               setEditingGame(null);
               setCreatingGame(false);
+              setImagePreview(null);
+              setUploadedImageUrl(null);
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

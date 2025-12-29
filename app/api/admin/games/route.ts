@@ -42,16 +42,63 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        requiredItems: {
+          include: {
+            requiredItem: true,
+          },
+        },
+        datasets: {
+          include: {
+            dataset: true,
+          },
+        },
+        gameType: true,
+        difficultyLevel: true,
+      },
+    });
+
+    // Transform response to include arrays of IDs and full objects
+    const transformedGames = games.map((game) => {
+      const transformed = {
+        ...game,
+        categoryIds: game.categories.map((gc) => gc.categoryId),
+        requiredItemIds: game.requiredItems.map((gr) => gr.requiredItemId),
+        datasetIds: game.datasets.map((gd) => gd.datasetId),
+        // Keep nested objects for backward compatibility
+        categories: game.categories.map((gc) => gc.category),
+        requiredItems: game.requiredItems.map((gr) => gr.requiredItem),
+        datasets: game.datasets.map((gd) => gd.dataset),
+        // Keep gameType as is
+        gameType: game.gameType,
+      };
+      
+      // Log for debugging
+      if (game.datasets.length > 0 || game.gameType) {
+        console.log(`Game ${game.id} - datasets: ${game.datasets.length}, gameType: ${game.gameType?.id || 'null'}`);
+      }
+      
+      return transformed;
     });
 
     return NextResponse.json({
       success: true,
-      games,
+      games: transformedGames,
     });
   } catch (error) {
     console.error('Get games error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'خطا در دریافت لیست بازی‌ها';
     return NextResponse.json(
-      { success: false, error: 'خطا در دریافت لیست بازی‌ها' },
+      {
+        success: false,
+        error: 'خطا در دریافت لیست بازی‌ها',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
       { status: 500 }
     );
   }
@@ -85,13 +132,16 @@ export async function PUT(request: NextRequest) {
       difficultyLevelId: z.string().optional(),
       duration: z.number().int().positive().optional(),
       materials: z.string().optional(),
+      imageUrl: z.string().url().optional().nullable(),
       isActive: z.boolean().optional(),
       categoryIds: z.array(z.string()).optional(),
       requiredItemIds: z.array(z.string()).optional(),
+      datasetIds: z.array(z.string()).optional(),
+      gameTypeId: z.string().nullable().optional(),
     });
 
     const data = updateSchema.parse(body);
-    const { id, categoryIds, requiredItemIds, difficultyLevelId, ...updateData } = data;
+    const { id, categoryIds, requiredItemIds, datasetIds, gameTypeId, difficultyLevelId, ...updateData } = data;
 
     console.log('Update data:', { id, updateData });
 
@@ -109,7 +159,9 @@ export async function PUT(request: NextRequest) {
       include: {
         categories: true,
         requiredItems: true,
+        datasets: true,
         difficultyLevel: true,
+        gameType: true,
       },
     });
 
@@ -129,6 +181,13 @@ export async function PUT(request: NextRequest) {
         (updateData as any).difficultyLevelId = level.id;
         (updateData as any).difficulty = level.value;
       }
+    }
+
+    // اگر gameTypeId ارسال شده، آن را به updateData اضافه کن
+    if (gameTypeId !== undefined) {
+      // اگر string خالی است، null می‌کنیم
+      (updateData as any).gameTypeId = gameTypeId === '' || gameTypeId === null ? null : gameTypeId;
+      console.log('Setting gameTypeId:', { gameTypeId, finalValue: (updateData as any).gameTypeId });
     }
 
     // اگر categoryIds ارسال شده، رشته category (نمایش سریع) را هم از روی تنظیمات دسته‌بندی sync کن
@@ -153,6 +212,31 @@ export async function PUT(request: NextRequest) {
 
       if (items.length > 0) {
         (updateData as any).materials = items.map((i) => i.nameFa).join('، ');
+      }
+    }
+
+    // اگر imageUrl جدید ارسال شده و با قبلی متفاوت است، عکس قدیمی را از Cloudinary حذف کن
+    if (updateData.imageUrl !== undefined) {
+      if (updateData.imageUrl && existingGame.imageUrl && updateData.imageUrl !== existingGame.imageUrl) {
+        // تصویر جدید جایگزین شده - عکس قدیمی را حذف کن
+        try {
+          const { deleteImage } = await import('@/lib/cloudinary');
+          await deleteImage(existingGame.imageUrl);
+          console.log('عکس قدیمی از Cloudinary حذف شد:', existingGame.imageUrl);
+        } catch (error) {
+          console.error('خطا در حذف عکس قدیمی از Cloudinary:', error);
+          // ادامه می‌دهیم حتی اگر حذف ناموفق بود
+        }
+      } else if (!updateData.imageUrl && existingGame.imageUrl) {
+        // تصویر حذف شده (null) - عکس قدیمی را از Cloudinary حذف کن
+        try {
+          const { deleteImage } = await import('@/lib/cloudinary');
+          await deleteImage(existingGame.imageUrl);
+          console.log('عکس از Cloudinary حذف شد (تصویر حذف شده):', existingGame.imageUrl);
+        } catch (error) {
+          console.error('خطا در حذف عکس از Cloudinary:', error);
+          // ادامه می‌دهیم حتی اگر حذف ناموفق بود
+        }
       }
     }
 
@@ -185,9 +269,76 @@ export async function PUT(request: NextRequest) {
       });
     }
 
+    // به‌روزرسانی datasets (many-to-many)
+    if (datasetIds) {
+      await prisma.gameDataset.deleteMany({ where: { gameId: id } });
+      if (datasetIds.length > 0) {
+        await prisma.gameDataset.createMany({
+          data: datasetIds.map((datasetId) => ({
+            gameId: id,
+            datasetId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    // دریافت بازی به‌روزرسانی شده با روابط
+    const updatedGame = await prisma.game.findUnique({
+      where: { id },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        requiredItems: {
+          include: {
+            requiredItem: true,
+          },
+        },
+        datasets: {
+          include: {
+            dataset: true,
+          },
+        },
+        gameType: true,
+        difficultyLevel: true,
+      },
+    });
+
+    if (!updatedGame) {
+      return NextResponse.json(
+        { success: false, error: 'بازی پس از به‌روزرسانی یافت نشد' },
+        { status: 404 }
+      );
+    }
+
+    // Transform response to include arrays of IDs and full objects
+    const transformedGame = {
+      ...updatedGame,
+      categoryIds: updatedGame.categories.map((gc) => gc.categoryId),
+      requiredItemIds: updatedGame.requiredItems.map((gr) => gr.requiredItemId),
+      datasetIds: updatedGame.datasets.map((gd) => gd.datasetId),
+      // Keep nested objects for backward compatibility
+      categories: updatedGame.categories.map((gc) => gc.category),
+      requiredItems: updatedGame.requiredItems.map((gr) => gr.requiredItem),
+      datasets: updatedGame.datasets.map((gd) => gd.dataset),
+      // Keep gameType as is
+      gameType: updatedGame.gameType,
+    };
+
+    console.log('Updated game response:', {
+      id: transformedGame.id,
+      datasetIds: transformedGame.datasetIds,
+      datasetsCount: transformedGame.datasets.length,
+      gameTypeId: transformedGame.gameTypeId,
+      gameType: transformedGame.gameType?.id || null,
+    });
+
     return NextResponse.json({
       success: true,
-      game,
+      game: transformedGame,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -239,8 +390,11 @@ export async function POST(request: NextRequest) {
       difficultyLevelId: z.string().optional(),
       duration: z.number().int().positive(),
       materials: z.string().optional(),
+      imageUrl: z.string().url().optional().nullable(),
       categoryIds: z.array(z.string()).optional(),
       requiredItemIds: z.array(z.string()).optional(),
+      datasetIds: z.array(z.string()).optional(),
+      gameTypeId: z.string().optional(),
     });
 
     const data = createSchema.parse(body);
@@ -294,7 +448,9 @@ export async function POST(request: NextRequest) {
         difficulty: difficultyValue,
         duration: data.duration,
         materials: materialsText || null,
+        imageUrl: data.imageUrl || null,
         difficultyLevelId: data.difficultyLevelId,
+        gameTypeId: data.gameTypeId || null,
       },
     });
 
@@ -320,9 +476,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ایجاد ارتباط datasets
+    if (data.datasetIds && data.datasetIds.length > 0) {
+      await prisma.gameDataset.createMany({
+        data: data.datasetIds.map((datasetId) => ({
+          gameId: game.id,
+          datasetId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // دریافت بازی ایجاد شده با روابط
+    const createdGame = await prisma.game.findUnique({
+      where: { id: game.id },
+      include: {
+        datasets: {
+          include: {
+            dataset: true,
+          },
+        },
+        gameType: true,
+      },
+    });
+
     return NextResponse.json({
       success: true,
-      game,
+      game: createdGame,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

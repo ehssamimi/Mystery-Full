@@ -48,6 +48,7 @@ export default function AdminImportExport({
   const [importPreviewCount, setImportPreviewCount] = useState<number | null>(null);
   const [importRows, setImportRows] = useState<any[] | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [overwriteExisting, setOverwriteExisting] = useState(false);
 
   const typeLabel = getTypeLabel(type, language);
   const isFa = language === 'fa';
@@ -130,7 +131,10 @@ export default function AdminImportExport({
       const res = await fetch(importApiPath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: importRows }),
+        body: JSON.stringify({ 
+          rows: importRows,
+          overwrite: overwriteExisting,
+        }),
       });
 
       const data = await res.json();
@@ -158,6 +162,7 @@ export default function AdminImportExport({
       setImportFileName(null);
       setImportPreviewCount(null);
       setImportRows(null);
+      setOverwriteExisting(false);
 
       onRefresh();
     } catch (error) {
@@ -191,6 +196,7 @@ export default function AdminImportExport({
             setImportFileName(null);
             setImportPreviewCount(null);
             setImportRows(null);
+            setOverwriteExisting(false);
           }}
           whileHover={{ scale: 1.03, y: -1 }}
           whileTap={{ scale: 0.97 }}
@@ -215,6 +221,7 @@ export default function AdminImportExport({
                 setImportFileName(null);
                 setImportPreviewCount(null);
                 setImportRows(null);
+                setOverwriteExisting(false);
               }
             }}
           >
@@ -237,6 +244,7 @@ export default function AdminImportExport({
                       setImportFileName(null);
                       setImportPreviewCount(null);
                       setImportRows(null);
+                      setOverwriteExisting(false);
                     }
                   }}
                   className="text-text-secondary hover:text-text-primary transition-colors"
@@ -284,11 +292,31 @@ export default function AdminImportExport({
                             : `This file contains ${importPreviewCount} rows.`}
                         </p>
                       )}
-                      <p className="text-sm text-text-secondary mt-4">
-                        {isFa
-                          ? `رکوردها بر اساس id، یا به‌روزرسانی می‌شوند یا اگر وجود نداشته باشند، اضافه خواهند شد. ادامه می‌دهید؟`
-                          : `Records will be updated or created based on id. Continue?`}
-                      </p>
+                      <div className="mt-4 space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={overwriteExisting}
+                            onChange={(e) => setOverwriteExisting(e.target.checked)}
+                            className="w-5 h-5 rounded border-accent/30 bg-bg-tertiary text-accent focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg-secondary cursor-pointer transition-all duration-200"
+                            disabled={isImporting}
+                          />
+                          <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
+                            {isFa
+                              ? 'بازنویسی رکوردهای موجود (Overwrite existing records)'
+                              : 'Overwrite existing records'}
+                          </span>
+                        </label>
+                        <p className="text-xs text-text-secondary/80">
+                          {isFa
+                            ? overwriteExisting
+                              ? 'رکوردهای موجود با داده‌های Excel بازنویسی می‌شوند.'
+                              : 'فقط رکوردهای جدید اضافه می‌شوند. رکوردهای موجود تغییر نمی‌کنند.'
+                            : overwriteExisting
+                            ? 'Existing records will be overwritten with Excel data.'
+                            : 'Only new records will be added. Existing records will not be changed.'}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
                       <motion.button
@@ -299,6 +327,7 @@ export default function AdminImportExport({
                             setImportFileName(null);
                             setImportPreviewCount(null);
                             setImportRows(null);
+                            setOverwriteExisting(false);
                           }
                         }}
                         whileHover={{ scale: isImporting ? 1 : 1.02 }}

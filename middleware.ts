@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session_token')?.value;
 
   // صفحات عمومی که نیاز به auth ندارند
-  const publicPaths = ['/login', '/api/auth/login', '/api/auth/verify', '/api/setup', '/api/games'];
+  const publicPaths = ['/login', '/api/auth/login', '/api/auth/verify', '/api/setup', '/api/games', '/api/datasets'];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
   // API های favorites نیاز به auth دارند اما middleware فقط token را چک می‌کند

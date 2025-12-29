@@ -59,6 +59,7 @@ model Game {
   rules       String
   tips        String?
   duration    Int        // in minutes
+  imageUrl    String?    // URL تصویر از Cloudinary
   isActive    Boolean    @default(true) // فعال/غیرفعال بودن بازی
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -76,6 +77,10 @@ model Game {
 
   categories    GameCategory[]
   requiredItems GameRequiredItem[]
+
+  gameTypeId String?
+  gameType   GameType? @relation(fields: [gameTypeId], references: [id], onDelete: SetNull)
+  datasets   GameDataset[]
 }
 
 model Favorite {
@@ -133,6 +138,8 @@ model GameType {
   nameEn    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  games Game[]
 }
 
 // Dataset - مجموعه داده‌ها
@@ -144,6 +151,7 @@ model Dataset {
   updatedAt DateTime      @updatedAt
 
   items     DatasetItem[]
+  games     GameDataset[]
 }
 
 // DatasetItem - رکوردهای داخل هر Dataset
@@ -190,6 +198,20 @@ model GameRequiredItem {
   @@unique([gameId, requiredItemId])
   @@index([gameId])
   @@index([requiredItemId])
+}
+
+// ارتباط چند-به-چند بازی و Dataset
+model GameDataset {
+  id        String   @id @default(cuid())
+  gameId    String
+  datasetId String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, datasetId])
+  @@index([gameId])
+  @@index([datasetId])
 }
 
 // امتیازدهی کاربران به بازی‌ها
