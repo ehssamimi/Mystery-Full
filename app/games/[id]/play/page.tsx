@@ -7,8 +7,13 @@ import { translations } from '@/lib/translations';
 import { Game, Dataset } from '@/types/game';
 import { motion } from 'framer-motion';
 import Flow1Spyfall from '@/components/games/flows/Flow1Spyfall';
+import FlowRoulette from '@/components/games/flows/FlowRoulette';
+import FlowPantomime from '@/components/games/flows/FlowPantomime';
+import GameHub from '@/components/games/GameHub';
 
 const FLOW1_GAME_TYPE_ID = 'cmjnzm9l300002p0ccu7h1wbq';
+const ROULETTE_GAME_TYPE_ID = 'cmj1aad680004ld3xvq0mprkx';
+const PANTOMIME_GAME_TYPE_ID = 'cmjst1ncf0000plxplszk3ax0';
 
 export default function GamePlayPage() {
   const params = useParams();
@@ -140,7 +145,29 @@ export default function GamePlayPage() {
 
   // Route to appropriate flow based on gameType.id
   if (gameTypeId === FLOW1_GAME_TYPE_ID) {
-    return <Flow1Spyfall playerCount={playerCount} datasets={datasets} onBack={handleBack} />;
+    return (
+      <GameHub onBack={handleBack}>
+        <Flow1Spyfall playerCount={playerCount} datasets={datasets} />
+      </GameHub>
+    );
+  }
+
+  // Route to Roulette (Wheel of Fortune) flow
+  if (gameTypeId === ROULETTE_GAME_TYPE_ID) {
+    return (
+      <GameHub onBack={handleBack}>
+        <FlowRoulette playerCount={playerCount} datasets={datasets} />
+      </GameHub>
+    );
+  }
+
+  // Route to Pantomime flow
+  if (gameTypeId === PANTOMIME_GAME_TYPE_ID) {
+    return (
+      <GameHub onBack={handleBack}>
+        <FlowPantomime playerCount={playerCount} datasets={datasets} />
+      </GameHub>
+    );
   }
 
   // Default/Unknown flow - show error or default message

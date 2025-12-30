@@ -110,7 +110,7 @@ export const translations = {
     appTitle: 'Mystery Full',
     howManyPlayers: 'چند نفر هستید؟',
     player: 'بازیکن',
-    startGame: 'شروع بازی 🎮',
+    startGameHome: 'شروع بازی 🎮',
     increase: 'افزایش',
     decrease: 'کاهش',
     
@@ -180,6 +180,18 @@ export const translations = {
     removePlayer: 'حذف بازیکن',
     clearText: 'پاک کردن متن',
     gameTypeNotSupported: 'نوع بازی پشتیبانی نمی‌شود',
+    
+    // Pantomime Game
+    playerOverview: 'نمای بازیکنان',
+    teamA: 'تیم الف',
+    teamB: 'تیم ب',
+    currentScore: 'امتیاز',
+    startGame: 'شروع بازی',
+    correct: 'درست',
+    wrong: 'غلط',
+    skip: 'رد کردن',
+    teamWins: '{team} برنده شد!',
+    tie: 'مساوی!',
   },
   en: {
     // Auth
@@ -292,7 +304,7 @@ export const translations = {
     appTitle: 'Mystery Full',
     howManyPlayers: 'How many players?',
     player: 'Player',
-    startGame: 'Start Game 🎮',
+    startGameHome: 'Start Game 🎮',
     increase: 'Increase',
     decrease: 'Decrease',
     
@@ -362,6 +374,18 @@ export const translations = {
     removePlayer: 'Remove Player',
     clearText: 'Clear Text',
     gameTypeNotSupported: 'Game type not supported',
+    
+    // Pantomime Game
+    playerOverview: 'Player Overview',
+    teamA: 'Team A',
+    teamB: 'Team B',
+    currentScore: 'Score',
+    startGame: 'Start Game',
+    correct: 'Correct',
+    wrong: 'Wrong',
+    skip: 'Skip',
+    teamWins: '{team} Wins!',
+    tie: 'Tie!',
   },
 };
 

@@ -12,12 +12,11 @@ import GameTimer from '@/components/games/GameTimer';
 interface Flow1SpyfallProps {
   playerCount: number;
   datasets: Dataset[];
-  onBack?: () => void;
 }
 
 type Stage = 'team' | 'cards' | 'timer';
 
-export default function Flow1Spyfall({ playerCount, datasets, onBack }: Flow1SpyfallProps) {
+export default function Flow1Spyfall({ playerCount, datasets }: Flow1SpyfallProps) {
   const { language } = useLanguageStore();
   const t = translations[language];
   const [stage, setStage] = useState<Stage>('team');
@@ -131,33 +130,6 @@ export default function Flow1Spyfall({ playerCount, datasets, onBack }: Flow1Spy
   return (
     <div className="min-h-screen p-4 md:p-8 relative z-10 animated-bg">
       <div className="max-w-7xl mx-auto">
-        {/* Back Button - Always visible */}
-        {onBack && (
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={onBack}
-            className="mb-6 p-2 hover:bg-bg-secondary rounded-lg transition-all"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </motion.button>
-        )}
-
         {/* Stage 1: Team Formation */}
         {stage === 'team' && (
           <motion.div
